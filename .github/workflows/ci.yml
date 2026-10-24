@@ -67,6 +67,9 @@ jobs:
           key: conan-${{ runner.os }}-Debug-${{ hashFiles('conanfile.py') }}
       - name: Build, test and enforce coverage gate
         run: scripts/coverage.sh
+      - name: Annotate uncovered lines and write summary
+        if: ${{ !cancelled() && hashFiles('coverage.json') != '' }}
+        run: python3 scripts/coverage_annotate.py coverage.json
 
   secrets:
     name: secrets (betterleaks)

@@ -11,5 +11,5 @@ cmake --build --preset conan-debug
 ctest --preset conan-debug --output-on-failure
 
 gcovr --root . --filter "src/" --filter "include/" --exclude "src/main.cpp" \
-  --print-summary --xml-pretty --output coverage.xml \
+  --print-summary --xml-pretty --output coverage.xml --json coverage.json \
   --fail-under-line "${min_line_coverage}" build/Debug
