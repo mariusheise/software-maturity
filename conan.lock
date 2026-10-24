@@ -1,0 +1,9 @@
+{
+    "version": "0.5",
+    "requires": [
+        "gtest/1.14.0#f8f0757a574a8dd747d16af62d6eb1b7%1743410807.169"
+    ],
+    "build_requires": [],
+    "python_requires": [],
+    "config_requires": []
+}
