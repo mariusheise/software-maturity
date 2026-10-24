@@ -16,23 +16,7 @@ def uncovered_ranges(lines):
     return ranges
 
 
-def badge_svg(pct):
-    color = "#4c1" if pct >= 90 else "#dfb317" if pct >= 75 else "#e05d44"
-    value = f"{pct:.0f}%"
-    left, right = 66, 10 + 7 * len(value)
-    width = left + right
-    return (
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="20" role="img" '
-        f'aria-label="coverage: {value}">'
-        f'<rect width="{left}" height="20" fill="#555"/>'
-        f'<rect x="{left}" width="{right}" height="20" fill="{color}"/>'
-        f'<g fill="#fff" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" text-anchor="middle">'
-        f'<text x="{left / 2}" y="14">coverage</text>'
-        f'<text x="{left + right / 2}" y="14">{value}</text></g></svg>'
-    )
-
-
-def main(path, markdown_out=None, badge_out=None):
+def main(path, markdown_out=None):
     with open(path) as f:
         files = json.load(f)["files"]
 
@@ -62,9 +46,6 @@ def main(path, markdown_out=None, badge_out=None):
             f.write(text)
     else:
         print(text)
-    if badge_out:
-        with open(badge_out, "w") as f:
-            f.write(badge_svg(pct))
     if markdown_out:
         with open(markdown_out, "w") as f:
             f.write("<!-- coverage-comment -->\n" + text)
@@ -72,5 +53,4 @@ def main(path, markdown_out=None, badge_out=None):
 
 if __name__ == "__main__":
     main(sys.argv[1] if len(sys.argv) > 1 else "coverage.json",
-         sys.argv[2] if len(sys.argv) > 2 else None,
-         sys.argv[3] if len(sys.argv) > 3 else None)
+         sys.argv[2] if len(sys.argv) > 2 else None)

@@ -10,8 +10,7 @@ cmake --preset conan-debug -DMATURITY_COVERAGE=ON
 cmake --build --preset conan-debug
 ctest --preset conan-debug --output-on-failure
 
-mkdir -p coverage-html
 gcovr --root . --filter "src/" --filter "include/" --exclude "src/main.cpp" \
   --print-summary --xml-pretty --output coverage.xml --json coverage.json \
-  --html-details coverage-html/index.html \
+  --html-details coverage-report.html --html-single-page --html-self-contained \
   --fail-under-line "${min_line_coverage}" build/Debug
