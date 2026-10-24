@@ -1,6 +1,10 @@
 # Last matching pattern wins.
-*                         @mariusheise
+*                           @mariusheise
 
-/.github/                 @mariusheise
-/.devcontainer/           @mariusheise
-/.pre-commit-config.yaml  @mariusheise
+/.github/                   @mariusheise
+/.devcontainer/             @mariusheise
+/.pre-commit-config.yaml    @mariusheise
+
+# Secret-scan exclusions and the test whose dummy password they exclude.
+/.betterleaks.toml          @mariusheise
+/tests/password_test.cpp    @mariusheise
