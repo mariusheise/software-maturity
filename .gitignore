@@ -4,6 +4,5 @@ CMakeUserPresets.json
 .idea/
 coverage.xml
 coverage.json
-coverage-html/
+coverage-report.html
 coverage-summary.md
-coverage-badge.svg
