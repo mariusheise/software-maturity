@@ -16,7 +16,7 @@ def uncovered_ranges(lines):
     return ranges
 
 
-def main(path):
+def main(path, markdown_out=None):
     with open(path) as f:
         files = json.load(f)["files"]
 
@@ -39,13 +39,18 @@ def main(path):
     pct = 100.0 * covered / total if total else 100.0
     summary = ["## Line coverage", "", f"**{pct:.1f}%** ({covered}/{total} lines)", "",
                "| File | Lines | Cover | Missing |", "| --- | --- | --- | --- |", *rows, ""]
+    text = "\n".join(summary)
     target = os.environ.get("GITHUB_STEP_SUMMARY")
     if target:
         with open(target, "a") as f:
-            f.write("\n".join(summary))
+            f.write(text)
     else:
-        print("\n".join(summary))
+        print(text)
+    if markdown_out:
+        with open(markdown_out, "w") as f:
+            f.write("<!-- coverage-comment -->\n" + text)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "coverage.json")
+    main(sys.argv[1] if len(sys.argv) > 1 else "coverage.json",
+         sys.argv[2] if len(sys.argv) > 2 else None)
