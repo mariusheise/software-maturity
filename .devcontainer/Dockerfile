@@ -3,7 +3,7 @@ FROM ubuntu:26.04
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential ca-certificates cmake gdb git ninja-build python3 python3-venv \
+        build-essential ca-certificates clang-tidy cmake gdb git ninja-build python3 python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 ENV VIRTUAL_ENV=/opt/venv
