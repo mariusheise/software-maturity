@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <span>
 #include <vector>
 
 TEST(Mean, EmptyInputYieldsNullopt) {
@@ -18,4 +19,9 @@ TEST(Mean, SingleValue) {
 TEST(Mean, MultipleValues) {
   const std::array<double, 4> v{1.0, 2.0, 3.0, 4.0};
   EXPECT_DOUBLE_EQ(maturity::mean(v).value(), 2.5);
+}
+
+TEST(Range, EmptyInputIsZero) {
+  const std::span<const double> empty;
+  EXPECT_DOUBLE_EQ(maturity::range(empty), 0.0);
 }
