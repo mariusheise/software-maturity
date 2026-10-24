@@ -18,6 +18,9 @@ practice (see [docs/maturity-checklist.md](docs/maturity-checklist.md)).
 | `.github/CODEOWNERS`      | Required reviewers per path            |
 | `.devcontainer/`          | Reproducible dev environment (Docker)  |
 | `scripts/build.sh`        | Install, configure, build, test        |
+| `scripts/coverage.sh`     | Build with coverage, enforce the gate  |
+| `SECURITY.md`             | Vulnerability reporting, verification  |
+| `CONTRIBUTING.md`         | Workflow and standards                 |
 
 ## Usage
 
