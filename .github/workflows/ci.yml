@@ -97,7 +97,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          printf '\nColoured source report: download the `coverage-html` bundle (artifact `coverage`) from the [workflow run](%s).\n' "${RUN_URL}" >> coverage-summary.md
+          printf '\nColoured source report: download the coverage-html folder from the coverage artifact on the [workflow run](%s).\n' "${RUN_URL}" >> coverage-summary.md
           id=$(gh api --paginate "repos/${GH_REPO}/issues/${PR}/comments" \
             --jq '.[] | select(.body | startswith("<!-- coverage-comment -->")) | .id' | head -n1)
           if [ -n "${id}" ]; then
