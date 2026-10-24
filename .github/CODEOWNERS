@@ -1,0 +1,6 @@
+# Last matching pattern wins.
+*                         @mariusheise
+
+/.github/                 @mariusheise
+/.devcontainer/           @mariusheise
+/.pre-commit-config.yaml  @mariusheise

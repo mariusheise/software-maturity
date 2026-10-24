@@ -1,0 +1,22 @@
+{
+  "name": "software-maturity",
+  "build": { "dockerfile": "Dockerfile", "context": "." },
+  "remoteUser": "ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "prek install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools",
+        "xaver.clang-format",
+        "editorconfig.editorconfig",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}
