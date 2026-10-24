@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Turn a gcovr JSON report into GitHub annotations and a job summary.
+"""Turn a gcovr JSON report into a job summary and PR comment body.
 
-With COVERAGE_DIFF_BASE set (e.g. HEAD^1), annotations are limited to lines
-changed relative to that revision, so "Files changed" shows what the PR covers.
+With COVERAGE_DIFF_BASE set (e.g. HEAD^1), also reports coverage of the lines
+changed relative to that revision.
 """
 import json
 import os
@@ -42,12 +42,6 @@ def fmt(ranges):
     return ", ".join(f"{a}-{b}" if a != b else str(a) for a, b in ranges) or "-"
 
 
-def annotate(level, path, ranges, title, verb):
-    for start, end in ranges:
-        span = f"Line {start} is" if start == end else f"Lines {start}-{end} are"
-        print(f"::{level} file={path},line={start},endLine={end},title={title}::{span} {verb}")
-
-
 def main(path, markdown_out=None):
     with open(path) as f:
         files = json.load(f)["files"]
@@ -62,15 +56,8 @@ def main(path, markdown_out=None):
         miss = {l["line_number"] for l in lines if l["count"] == 0}
         total += len(lines)
         covered += len(hit)
-        if diff is None:
-            annotate("warning", entry["file"], ranges_of(miss), "Not covered by tests",
-                     "not executed by any test")
-        else:
+        if diff is not None:
             touched = diff.get(entry["file"], set())
-            annotate("warning", entry["file"], ranges_of(miss & touched),
-                     "Not covered by tests", "changed here but not executed by any test")
-            annotate("notice", entry["file"], ranges_of(hit & touched),
-                     "Covered by tests", "changed here and executed by tests")
             patch_total += len((hit | miss) & touched)
             patch_hit += len(hit & touched)
         pct = 100.0 * len(hit) / len(lines) if lines else 100.0
