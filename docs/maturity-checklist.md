@@ -12,7 +12,7 @@ first, then 3 and 4, then 6.
 | 11    | Dependency scanning                       | Partial (Dependabot; dependency review planned)  |
 | 12    | Secrets scanning                          | In place (gitleaks, betterleaks, history scan)   |
 | 13    | Workflow hardening                        | In place (zizmor, actionlint, SHA pins, read-only token) |
-| 17    | Reproducible environment                  | Partial (devcontainer; no Conan lockfile yet)    |
+| 17    | Reproducible environment                  | In place (devcontainer, Conan lockfile)          |
 | 20    | Branch protection and rulesets            | In place (`protect-main`; owner bypass via PR)   |
 | 21    | CODEOWNERS                                | In place (code owner review required)            |
 | 2-3   | Runners and reusable workflows            | Planned                                          |

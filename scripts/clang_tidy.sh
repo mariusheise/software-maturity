@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 build_dir="build/Debug"
 
 if [[ ! -f "${build_dir}/compile_commands.json" ]]; then
-  conan install . --build=missing -s build_type=Debug -s compiler.cppstd=20
+  conan install . --lockfile=conan.lock --build=missing -s build_type=Debug -s compiler.cppstd=20
   cmake --preset conan-debug
 fi
 

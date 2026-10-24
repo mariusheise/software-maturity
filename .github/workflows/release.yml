@@ -31,11 +31,10 @@ jobs:
         run: |
           mkdir dist
           tar -czf "dist/maturity-${TAG}-linux-x86_64.tar.gz" -C build/Release maturity_app
-      - name: Lock dependencies for the SBOM
+      - name: Stage the committed lockfile for the SBOM
         run: |
           mkdir sbom-src
-          conan lock create . --lockfile-out=sbom-src/conan.lock \
-            -s build_type=Release -s compiler.cppstd=20
+          cp conan.lock sbom-src/conan.lock
       - uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
         with:
           path: sbom-src

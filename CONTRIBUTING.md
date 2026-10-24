@@ -25,6 +25,9 @@ toolchain, Conan and prek, and installs the git hooks on creation.
 - Never commit real secrets. If a test needs a dummy credential, exclude that
   exact path, rule and value in `.betterleaks.toml`, as `tests/password_test.cpp` does.
 - GitHub Actions are pinned to commit SHAs with least-privilege `permissions`.
+- Dependencies are pinned by `conan.lock`; builds fail if `conanfile.py` and the lockfile
+  disagree. After changing a requirement or upgrading, run `scripts/update_lock.sh` and
+  commit the result.
 
 ## Reporting security issues
 
