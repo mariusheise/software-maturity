@@ -3,16 +3,21 @@
 Based on the 28-practice GitHub CI checklist. Rollout order: categories 1, 2, 5
 first, then 3 and 4, then 6.
 
-| #     | Practice                                | Status                      |
-| ----- | --------------------------------------- | --------------------------- |
-| 4     | Required tests (GoogleTest)             | In place                    |
-| 6     | prek hooks                              | In place (CI check pending) |
-| 21    | CODEOWNERS                              | In place (placeholder team) |
-| 17    | Reproducible environment                | Partial (no lockfile yet)   |
-| 1     | Automated build on push/PR              | Next                        |
-| 5     | Static analysis / CodeQL                | Planned                     |
-| 20    | Branch protection / rulesets            | Planned                     |
-| 11-16 | Supply chain and security               | Planned                     |
-| 18-19 | Release and deployment                  | Planned                     |
-| 22-24 | Governance docs and access              | Planned                     |
-| 25-28 | Measurement and improvement             | Planned                     |
+| #     | Practice                                  | Status                                           |
+| ----- | ----------------------------------------- | ------------------------------------------------ |
+| 1     | Automated build on push/PR                | In place (Release/Debug matrix, Conan cache)     |
+| 4     | Required tests                            | In place (GoogleTest; no coverage gate yet)      |
+| 5     | Static analysis and linting               | Partial (clang-format; CodeQL planned)           |
+| 6     | prek hooks                                | In place (local and required CI check)           |
+| 11    | Dependency scanning                       | Partial (Dependabot; dependency review planned)  |
+| 12    | Secrets scanning                          | In place (gitleaks, betterleaks, history scan)   |
+| 13    | Workflow hardening                        | In place (zizmor, actionlint, SHA pins, read-only token) |
+| 17    | Reproducible environment                  | Partial (devcontainer; no Conan lockfile yet)    |
+| 20    | Branch protection and rulesets            | In place (`protect-main`; owner bypass via PR)   |
+| 21    | CODEOWNERS                                | In place (code owner review required)            |
+| 2-3   | Runners and reusable workflows            | Planned                                          |
+| 7-10  | Fuzzing, performance, E2E, mutation       | Planned                                          |
+| 14-16 | Provenance, IaC scanning, Scorecard       | Planned                                          |
+| 18-19 | Release and deployment                    | Planned                                          |
+| 22-24 | Governance docs and access                | Planned                                          |
+| 25-28 | Measurement and improvement               | Planned                                          |
