@@ -70,7 +70,7 @@ jobs:
           key: conan-${{ runner.os }}-Debug-${{ hashFiles('conanfile.py') }}
       - name: Build, test and enforce coverage gate
         run: scripts/coverage.sh
-      - name: Annotate uncovered lines and write summary
+      - name: Write coverage summary
         if: ${{ !cancelled() && hashFiles('coverage.json') != '' }}
         env:
           COVERAGE_DIFF_BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
