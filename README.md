@@ -1,5 +1,7 @@
 # Software Maturity Demonstrator
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mariusheise/software-maturity/badge)](https://scorecard.dev/viewer/?uri=github.com/mariusheise/software-maturity)
+
 Reference project showing how a codebase reaches a high software maturity level
 with Git and GitHub. It starts with a small C++ library and grows practice by
 practice (see [docs/maturity-checklist.md](docs/maturity-checklist.md)).

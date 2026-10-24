@@ -13,6 +13,6 @@ RUN python3 -m venv "$VIRTUAL_ENV" \
     && pip install --no-cache-dir -r /tmp/requirements.txt \
     && git config --system --add safe.directory '*'
 
-# Non-root user matching the default Ubuntu 24.04 "ubuntu" account (uid 1000).
+# Non-root user matching the default Ubuntu "ubuntu" account (uid 1000).
 USER ubuntu
 RUN conan profile detect --force
