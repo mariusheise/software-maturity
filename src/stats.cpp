@@ -13,3 +13,12 @@ std::optional<double> mean(std::span<const double> values) {
 }
 
 }  // namespace maturity
+
+namespace maturity {
+int demo_uncovered(int x) {
+  if (x > 0) {
+    return x * 2;
+  }
+  return 0;
+}
+}  // namespace maturity
