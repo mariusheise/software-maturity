@@ -1,0 +1,10 @@
+# Secret-scan exclusions. Every change needs Code Owner review (.github/CODEOWNERS).
+# Keep each exclusion as narrow as possible: exact path, rule and secret value.
+filter = '''
+attributes["path"] == "tests/password_test.cpp" &&
+finding["rule_id"] == "generic-password" &&
+finding["secret"] == "Tr0ub4dor&3xK9#mQ2vL"
+'''
+
+[extend]
+useDefault = true
