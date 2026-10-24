@@ -4,3 +4,5 @@ CMakeUserPresets.json
 .idea/
 coverage.xml
 coverage.json
+coverage-html/
+coverage-summary.md
