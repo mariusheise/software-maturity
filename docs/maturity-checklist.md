@@ -6,7 +6,7 @@ first, then 3 and 4, then 6.
 | #     | Practice                                  | Status                                           |
 | ----- | ----------------------------------------- | ------------------------------------------------ |
 | 1     | Automated build on push/PR                | In place (Release/Debug matrix, Conan cache)     |
-| 4     | Required tests                            | In place (GoogleTest; no coverage gate yet)      |
+| 4     | Required tests                            | In place (GoogleTest; 90% line-coverage gate) |
 | 5     | Static analysis and linting               | Partial (clang-format; CodeQL planned)           |
 | 6     | prek hooks                                | In place (local and required CI check)           |
 | 11    | Dependency scanning                       | Partial (Dependabot; dependency review planned)  |
