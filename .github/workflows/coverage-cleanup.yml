@@ -1,0 +1,39 @@
+name: Coverage cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  cleanup:
+    name: remove PR coverage report
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    concurrency:
+      group: coverage-publish
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Remove pr-N from gh-pages
+        run: |
+          set -euo pipefail
+          repo_url="https://github.com/${GH_REPO}.git"
+          auth=$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)
+          git_auth() { git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" "$@"; }
+
+          git_auth ls-remote --exit-code --heads "${repo_url}" gh-pages >/dev/null 2>&1 || exit 0
+          git_auth clone --quiet --depth 1 --branch gh-pages "${repo_url}" site
+          cd site
+          [ -d "pr-${PR}" ] || exit 0
+          git rm -rq "pr-${PR}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --quiet -m "Remove coverage report for closed PR #${PR}"
+          git_auth push origin HEAD:gh-pages
