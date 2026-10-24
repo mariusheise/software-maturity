@@ -25,3 +25,8 @@ TEST(Range, EmptyInputIsZero) {
   const std::span<const double> empty;
   EXPECT_DOUBLE_EQ(maturity::range(empty), 0.0);
 }
+
+TEST(Range, SpreadOfMultipleValues) {
+  const std::array<double, 4> v{3.0, 9.0, 1.0, 4.0};
+  EXPECT_DOUBLE_EQ(maturity::range(v), 8.0);
+}
