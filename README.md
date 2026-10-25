@@ -42,7 +42,7 @@ later, so the practices stay language-agnostic where possible.
 | `.github/workflows/`      | CI, coverage, clang-tidy, CodeQL, Scorecard, releases |
 | `.github/CODEOWNERS`      | Required reviewers per path                       |
 | `.devcontainer/`          | Reproducible dev environment (Docker)             |
-| `scripts/`                | build, clang-tidy, Conan bootstrap                |
+| `scripts/`                | clang-tidy, Conan bootstrap                       |
 
 ## Usage
 
@@ -50,9 +50,9 @@ Open the folder in VS Code and choose **Reopen in Container**
 (requires Docker and the Dev Containers extension). Then, in the container:
 
 ```sh
-scripts/build.sh                     # or: scripts/build.sh Debug
-conan maturity:install --product=productA --target=linux-x86_64 --build-type=debug
-PRODUCT=productB scripts/build.sh    # build the other product variant
+conan maturity:build --product=productA --target=linux-x86_64                    # Release, with tests
+conan maturity:build --product=productA --target=linux-x86_64 --build-type=debug
+conan maturity:build --product=productB --target=linux-x86_64 --skip-test        # other variant, no tests
 conan maturity:coverage --product=productA --target=linux-x86_64 --diff-base=origin/main
 prek run --all-files
 ./build/Release/maturity_app

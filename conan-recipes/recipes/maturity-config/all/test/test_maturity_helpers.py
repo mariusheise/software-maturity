@@ -77,3 +77,29 @@ def test_installed_config_refs(tmp_path):
 def test_config_packages(tmp_path):
     write(tmp_path, {"conanconfig.yml": "packages:\n  - maturity-config/[>=0.1 <1]\n"})
     assert _maturity.config_packages(str(tmp_path)) == ["maturity-config/[>=0.1 <1]"]
+
+
+def profiles_api():
+    return SimpleNamespace(profiles=SimpleNamespace(list=lambda: [
+        "maturity/target/linux-x86_64", "maturity/build_type/debug",
+        "maturity/build_type/release"]))
+
+
+def test_graph_args_composes_root_lock_options_and_profiles(tmp_path):
+    write(tmp_path, {"products/a.yml": "options:\n  product: a\n", "products/a.lock": "{}"})
+    root = str(tmp_path)
+    assert _maturity.graph_args(profiles_api(), root, "a", "linux-x86_64", "debug") == [
+        root, "--lockfile=" + str(tmp_path / "products" / "a.lock"), "-o=&:product=a",
+        *_maturity.profile_args("linux-x86_64", "debug")]
+
+
+@pytest.mark.parametrize("product, target, build_type, message", [
+    ("nope", "linux-x86_64", "debug", "Unknown product 'nope'. Available: a, b"),
+    ("a", "win", "debug", "Unknown target 'win'. Available: linux-x86_64"),
+    ("a", "linux-x86_64", "relwithdebinfo", "Unknown build type 'relwithdebinfo'"),
+    ("b", "linux-x86_64", "debug", "Run 'conan maturity:lock-update --product b'"),
+])
+def test_graph_args_errors(tmp_path, product, target, build_type, message):
+    write(tmp_path, {"products/a.yml": "", "products/a.lock": "{}", "products/b.yml": ""})
+    with pytest.raises(ConanException, match=message):
+        _maturity.graph_args(profiles_api(), str(tmp_path), product, target, build_type)

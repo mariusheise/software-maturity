@@ -1,10 +1,8 @@
 import os
 
 from conan.cli.command import conan_command
-from conan.errors import ConanException
 
-from _maturity import (add_path_argument, check_choice, discover_products, option_args,
-                       profile_args, profile_values, run)
+from _maturity import add_path_argument, graph_args, run
 
 
 @conan_command(group="Maturity")
@@ -21,14 +19,5 @@ def install(conan_api, parser, *args):
     args = parser.parse_args(*args)
 
     root = os.path.abspath(args.path)
-    products = discover_products(root)
-    check_choice("product", args.product, list(products))
-    check_choice("target", args.target, profile_values(conan_api, "target"))
-    check_choice("build type", args.build_type, profile_values(conan_api, "build_type"))
-    product = products[args.product]
-    if not os.path.isfile(product["lock"]):
-        raise ConanException(f"Missing lockfile for {args.product}. "
-                             f"Run 'conan maturity:lock-update --product {args.product}'")
-
-    run(conan_api, ["install", root, f"--lockfile={product['lock']}", *option_args(product),
-                    *profile_args(args.target, args.build_type), f"--build={args.build}"])
+    run(conan_api, ["install", *graph_args(conan_api, root, args.product, args.target,
+                                           args.build_type), f"--build={args.build}"])

@@ -8,8 +8,7 @@ from conan.cli.command import conan_command
 from conan.errors import ConanException
 
 from _coverage import write_summary
-from _maturity import (add_path_argument, check_choice, discover_products, option_args,
-                       profile_args, profile_values, run)
+from _maturity import add_path_argument, graph_args, run
 
 # Set by the maturity/coverage profile (build_folder_vars=["const.coverage"]).
 BUILD_FOLDER = os.path.join("build", "coverage")
@@ -33,13 +32,7 @@ def coverage(conan_api, parser, *args):
     args = parser.parse_args(*args)
 
     root = os.path.abspath(args.path)
-    products = discover_products(root)
-    check_choice("product", args.product, list(products))
-    check_choice("target", args.target, profile_values(conan_api, "target"))
-    product = products[args.product]
-    if not os.path.isfile(product["lock"]):
-        raise ConanException(f"Missing lockfile for {args.product}. "
-                             f"Run 'conan maturity:lock-update --product {args.product}'")
+    build_args = graph_args(conan_api, root, args.product, args.target, "debug")
     gcovr = shutil.which("gcovr")
     if not gcovr:
         raise ConanException("gcovr not found. Install it, e.g. "
@@ -49,9 +42,7 @@ def coverage(conan_api, parser, *args):
     for stale in glob.glob(os.path.join(root, BUILD_FOLDER, "**", "*.gcda"), recursive=True):
         os.remove(stale)
 
-    run(conan_api, ["build", root, f"--lockfile={product['lock']}", *option_args(product),
-                    *profile_args(args.target, "debug"), "-pr:h=maturity/coverage",
-                    f"--build={args.build}"])
+    run(conan_api, ["build", *build_args, "-pr:h=maturity/coverage", f"--build={args.build}"])
     if not os.path.isdir(os.path.join(root, BUILD_FOLDER)):
         raise ConanException(f"No build folder {BUILD_FOLDER}. The recipe needs cmake_layout() "
                              "and a build() that builds and runs the tests")

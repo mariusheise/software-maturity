@@ -33,6 +33,7 @@ def test_package_contains_only_profiles_and_commands():
         "conaninfo.txt", "conanmanifest.txt",
         "extensions/commands/maturity/_coverage.py",
         "extensions/commands/maturity/_maturity.py",
+        "extensions/commands/maturity/cmd_build.py",
         "extensions/commands/maturity/cmd_config_lock_update.py",
         "extensions/commands/maturity/cmd_coverage.py",
         "extensions/commands/maturity/cmd_install.py",

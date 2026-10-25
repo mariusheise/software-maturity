@@ -62,6 +62,20 @@ def profile_args(target, build_type):
             f"-pr:b=maturity/target/{BUILD_TARGET}", "-pr:b=maturity/build_type/release"]
 
 
+def graph_args(conan_api, root, product, target, build_type):
+    """Root, lockfile, options and profiles of a product variant for 'conan install/build'."""
+    products = discover_products(root)
+    check_choice("product", product, list(products))
+    check_choice("target", target, profile_values(conan_api, "target"))
+    check_choice("build type", build_type, profile_values(conan_api, "build_type"))
+    variant = products[product]
+    if not os.path.isfile(variant["lock"]):
+        raise ConanException(f"Missing lockfile for {product}. "
+                             f"Run 'conan maturity:lock-update --product {product}'")
+    return [root, f"--lockfile={variant['lock']}", *option_args(variant),
+            *profile_args(target, build_type)]
+
+
 def installed_config_refs(conan_api):
     """Config packages installed in the Conan home, with version and revision."""
     path = os.path.join(conan_api.home_folder, "config_version.json")

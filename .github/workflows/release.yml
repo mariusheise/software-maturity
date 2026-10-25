@@ -37,7 +37,7 @@ jobs:
       - name: Install Conan config
         run: scripts/conan_bootstrap.sh && conan config install-pkg .
       - name: Build and test
-        run: scripts/build.sh Release
+        run: conan maturity:build --product "${PRODUCT}" --target linux-x86_64
       - name: Package
         run: |
           mkdir dist
