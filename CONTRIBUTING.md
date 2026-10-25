@@ -23,6 +23,8 @@ release branches do not share commands, profiles or packages.
 3. Open a pull request. Required checks must pass: `prek`, `tests`, `coverage`,
    `conan-commands`, `secrets (betterleaks)`, `analyze (c-cpp)` and `clang-tidy`. `tests` and
    `coverage` pass only when every product's `build-test` and `coverage` jobs pass.
+   `dependency-review` and `audit` (only when dependencies change) also run; see
+   [Dependency vulnerabilities](#dependency-vulnerabilities).
 4. Code Owners review is required for paths listed in `.github/CODEOWNERS`.
    Changes to secret-scan exclusions (`.betterleaks.toml`) always need it.
 5. Pull requests are squash-merged; commits must be signed.
@@ -114,6 +116,27 @@ conan maturity:tidy --product productA --target linux-x86_64 --fix              
   fix any new findings in that pull request.
 - The log and SARIF land in `build/tidy-report/`; CI uploads the SARIF to code scanning.
 - `--fix` applies clang-tidy's fixes and then checks again; review the diff before committing.
+
+## Dependency vulnerabilities
+
+Two checks look for known vulnerabilities in dependencies:
+
+- `dependency-review` (in `ci.yml`) fails a pull request that adds or upgrades a GitHub Action
+  or Python package with a known vulnerability of severity "high" or worse. It uses GitHub's
+  dependency graph, which doesn't understand Conan.
+- `audit` (`audit.yml`) scans the locked Conan dependencies of every product with
+  `conan audit scan`. It runs daily, and on pull requests and pushes that change
+  `conanfile.py`, a lockfile or `products/`. It fails on a vulnerability with a CVSS score of
+  7.0 or higher (`audit.severity_level` in the product manifest). Run it locally:
+
+```sh
+export CONAN_AUDIT_PROVIDER_TOKEN_CONANCENTER=<token>   # free token: https://conan.io/audit/register
+conan maturity:audit
+```
+
+The reports land in `build/audit-report/`. CI reads the token from the repository secret
+`CONAN_AUDIT_TOKEN`; pull requests from forks and Dependabot don't get it, so the scan is
+skipped there. Never commit a token.
 
 ## Reporting security issues
 

@@ -54,6 +54,7 @@ conan maturity:build --product=productA --target=linux-x86_64 --build-type=debug
 conan maturity:build --product=productB --target=linux-x86_64 --skip-test        # other variant, no tests
 conan maturity:coverage --product=productA --target=linux-x86_64 --diff-base=origin/main
 conan maturity:tidy --product=productA --target=linux-x86_64                     # clang-tidy, as in CI
+conan maturity:audit                                                              # known CVEs in the locked deps (needs a token)
 prek run --all-files
 ./build/Release/maturity_app
 ```
@@ -61,7 +62,9 @@ prek run --all-files
 `maturity:build` writes a sortable single-file test report (counts, status and time per test)
 to `build/test-report/<product>-<build type>.html`. The coverage run writes its reports,
 including a single-file HTML report, to `build/coverage-report/`, and clang-tidy writes its log and SARIF to `build/tidy-report/`; see
-[CONTRIBUTING.md](CONTRIBUTING.md#coverage).
+[CONTRIBUTING.md](CONTRIBUTING.md#coverage). `maturity:audit` writes its reports to
+`build/audit-report/` and needs an audit.conan.io token, see
+[CONTRIBUTING.md](CONTRIBUTING.md#dependency-vulnerabilities).
 
 The git hook and the Conan configuration are installed automatically (`prek install`,
 `scripts/conan_bootstrap.sh`, `conan config install-pkg .`).

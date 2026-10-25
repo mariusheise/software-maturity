@@ -39,6 +39,10 @@ MANIFEST_SCHEMA = {
         "fail_under": lambda v: (None if isinstance(v, (int, float)) and not isinstance(v, bool)
                                  and 0 <= v <= 100 else "must be a number from 0 to 100"),
     },
+    "audit": {
+        "severity_level": lambda v: (None if isinstance(v, (int, float)) and not isinstance(v, bool)
+                                     and 0 <= v <= 10 else "must be a CVSS score from 0 to 10"),
+    },
     "release": {
         "latest": lambda v: None if v is None or isinstance(v, bool)
         else "must be true, false or null",
@@ -183,6 +187,6 @@ def config_packages(root):
         return (yaml.safe_load(f) or {}).get("packages") or []
 
 
-def run(conan_api, cmd):
+def run(conan_api, cmd, raise_on_errors=True):
     ConanOutput().info("Running: conan " + " ".join(cmd))
-    conan_api.command.run(cmd)
+    return conan_api.command.run(cmd, raise_on_errors=raise_on_errors)

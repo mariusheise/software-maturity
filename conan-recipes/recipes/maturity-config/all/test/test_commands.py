@@ -25,7 +25,7 @@ def lock(client, product):
 def test_commands_are_listed(client):
     client.run("-h")
     for command in ("maturity:install", "maturity:lock-update", "maturity:config-lock-update",
-                    "maturity:coverage", "maturity:build", "maturity:tidy", "maturity:list"):
+                    "maturity:coverage", "maturity:build", "maturity:tidy", "maturity:list", "maturity:audit"):
         assert command in client.out
 
 
@@ -435,3 +435,72 @@ def test_lock_update_with_a_target_the_product_does_not_list(client):
     assert "productA does not support target 'linux-armv8', skipped" in client.out
     assert os.path.exists(os.path.join(client.current_folder, "products", "productB.lock"))
     assert not os.path.exists(os.path.join(client.current_folder, "products", "productA.lock"))
+
+
+def scan_result(score=None, unscanned=False):
+    """A 'conan audit scan' result: zlib with one vulnerability of <score>, or none."""
+    edges = [] if score is None else [{"node": {"name": "CVE-2026-0001", "severity": "High",
+                                                "cvss": {"preferredBaseScore": score}}}]
+    data = {"zlib/1.3.1": {"vulnerabilities": {"totalCount": len(edges), "edges": edges}}}
+    if unscanned:
+        data["private/1.0"] = {"error": {"details": "Not found."}}
+    return {"data": data, "provider_url": "https://audit.example"}
+
+
+def fake_audit(monkeypatch, result):
+    """Replace the audit provider, so no token or network is needed; returns the scan calls."""
+    from conan.api.subapi.audit import AuditAPI
+    calls = []
+    monkeypatch.setattr(AuditAPI, "get_provider", lambda self, name: name)
+
+    def scan(deps_graph, provider, context=None):
+        calls.append(provider)
+        return result
+    monkeypatch.setattr(AuditAPI, "scan", staticmethod(scan))
+    return calls
+
+
+def test_audit_scans_every_product_and_writes_reports(client, monkeypatch):
+    calls = fake_audit(monkeypatch, scan_result(score=5.3, unscanned=True))
+    client.run("maturity:lock-update")
+    client.run("maturity:audit")
+    assert calls == ["conancenter", "conancenter"]
+    assert "-o=&:product=productB" in client.out
+    assert "-pr:h=maturity/build_type/release" in client.out
+    assert "1 known vulnerabilities** in 2 package(s), 0 at or above the gate of CVSS 7" in client.out
+    assert "Not scanned: private/1.0 (Not found.)" in client.out
+    reports = os.path.join(client.current_folder, "build", "audit-report")
+    for ext in ("json", "html", "md"):
+        assert os.path.isfile(os.path.join(reports, f"productA-linux-x86_64.{ext}"))
+    with open(os.path.join(reports, "productB-linux-x86_64.html"), encoding="utf-8") as f:
+        assert "CVE-2026-0001" in f.read()
+
+
+def test_audit_fails_at_the_gate_from_the_manifest_or_the_flag(client, monkeypatch):
+    fake_audit(monkeypatch, scan_result(score=7.5))
+    client.save({"products/productA.yml": "options:\n  product: productA\naudit:\n  severity_level: 8\n"})
+    client.run("maturity:lock-update")
+    client.run("maturity:audit --product productA")
+    assert "No known vulnerabilities at or above the gate" in client.out
+    client.run("maturity:audit", assert_error=True)
+    assert "productB (linux-x86_64): zlib/1.3.1 CVE-2026-0001 CVSS 7.5 (gate 7)" in client.out
+    assert "productA (linux-x86_64)" not in client.out.split("at or above the gate:")[-1]
+    client.run("maturity:audit --product productA --severity-level 7.5", assert_error=True)
+
+
+def test_audit_reports_a_failed_scan(client, monkeypatch):
+    fake_audit(monkeypatch, {"data": {}, "conan_error": "Authentication error (401)."})
+    client.run("maturity:lock-update --product productA")
+    client.run("maturity:audit --product productA", assert_error=True)
+    assert "Audit of productA (linux-x86_64) failed: Authentication error (401)." in client.out
+
+
+def test_audit_rejects_unknown_values_and_needs_the_lock(client, monkeypatch):
+    fake_audit(monkeypatch, scan_result())
+    client.run("maturity:audit --product nope", assert_error=True)
+    assert "Unknown product 'nope'" in client.out
+    client.run("maturity:audit --product productA", assert_error=True)
+    assert "Run 'conan maturity:lock-update --product productA'" in client.out
+    client.run("maturity:lock-update --product productA")
+    client.run("maturity:audit --product productA --target win", assert_error=True)
+    assert "Unknown target 'win'" in client.out

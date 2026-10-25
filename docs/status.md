@@ -20,6 +20,7 @@ is the source of truth for what is done and what is open.
 | Versioning          | Version only from the release tag: no `version` in `conanfile.py`/`CMakeLists.txt`, `maturity:build --version`, `MATURITY_VERSION` into `version.hpp`, `maturity_app --version`, checked by ctest and in `release.yml` (#40) |
 | Releases            | Tag-triggered release with SBOM and attestations (#12); coverage report as asset (#25); auto pre-release flag and `actions/attest` (#27); reusable workflow with per-product tags (#28); version from the tag (#40); attested test report of the released product (#41) |
 | Governance docs     | SECURITY.md, CONTRIBUTING.md (#11); checklist status (#3)            |
+| Dependency scanning | `dependency-review` on PRs (actions, pip); `conan maturity:audit` wraps `conan audit scan` per product, gate `audit.severity_level` (CVSS 7.0) in the manifest, reports in `build/audit-report/`; `audit.yml` daily and on dependency changes, token in secret `CONAN_AUDIT_TOKEN` (#46) |
 | Dependency updates  | Dependabot bumps for ubuntu, conan, prek (#4 to #6); pytest 9.1.1, gcovr 8.7 (#32, #33) |
 
 Closed without merging: #18 (demo PR for uncovered code), #22 (code coverage API upload,
@@ -37,7 +38,8 @@ work for private repositories). A private-safe design is planned in
 
 ## Open
 
-1. Add a dependency-review check (checklist 11).
+1. Make `dependency-review` a required check once it has run on `main`'s PRs (ruleset
+   `protect-main`). `audit` stays optional (path filter, daily schedule).
 2. Build both products in CI: done for tests and coverage (#41); clang-tidy and CodeQL stay on
    productA (same sources).
 3. Give productB a real difference, or replace the placeholder zlib dependency.
