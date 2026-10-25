@@ -79,7 +79,7 @@ cooldown for new releases.
 | Package | Pinned in | Updated by | Used for |
 | --- | --- | --- | --- |
 | `gtest/1.14.0` (test requirement) | `products/<name>.lock` | `conan maturity:lock-update` | Unit tests |
-| `zlib/1.3.1` (productB only) | `products/productB.lock` | `conan maturity:lock-update` | Placeholder product difference |
+| `zlib/1.3.2` (productB only) | `products/productB.lock` | `conan maturity:lock-update` | Placeholder product difference |
 | `maturity-config` (configuration package) | `conan.lock` and every product lock | `conan maturity:config-lock-update` | Profiles and the `maturity:*` commands |
 
 Dependencies come from conancenter; `maturity-config` from the in-repo recipe index

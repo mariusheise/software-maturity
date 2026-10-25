@@ -1,7 +1,7 @@
 {
     "version": "0.5",
     "requires": [
-        "zlib/1.3.1#cac0f6daea041b0ccf42934163defb20%1765284699.337",
+        "zlib/1.3.2#1cb806da49011867778ffb6ac7190fcb%1777558780.503",
         "gtest/1.14.0#f8f0757a574a8dd747d16af62d6eb1b7%1743410807.169"
     ],
     "build_requires": [],
