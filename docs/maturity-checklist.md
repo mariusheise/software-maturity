@@ -7,8 +7,8 @@ first, then 3 and 4, then 6.
 
 | #     | Practice                                  | Status                                           |
 | ----- | ----------------------------------------- | ------------------------------------------------ |
-| 1     | Automated build on push/PR                | In place (Release/Debug matrix, Conan cache)     |
-| 4     | Required tests                            | In place (GoogleTest; 90% line-coverage gate, runnable locally with `conan maturity:coverage`) |
+| 1     | Automated build on push/PR                | In place (both products × Release/Debug, Conan cache) |
+| 4     | Required tests                            | In place (GoogleTest for both products; sortable test report; 90% line-coverage gate, runnable locally with `conan maturity:coverage`) |
 | 5     | Static analysis and linting               | In place (clang-format, CodeQL, -Werror, clang-tidy gate with a pinned version, runnable locally with `conan maturity:tidy`) |
 | 6     | prek hooks                                | In place (local and required CI check)           |
 | 11    | Dependency scanning                       | Partial (Dependabot; dependency review open)  |
@@ -20,6 +20,6 @@ first, then 3 and 4, then 6.
 | 2-3   | Runners and reusable workflows            | Planned                                          |
 | 7-10  | Fuzzing, performance, E2E, mutation       | Planned                                          |
 | 14-16 | Provenance, IaC scanning, Scorecard       | Partial (SBOM, attestations, Scorecard; no IaC scanning)                                        |
-| 18-19 | Release and deployment                    | In place (per-product tag releases, attested assets)                                        |
+| 18-19 | Release and deployment                    | In place (per-product tag releases, version from the tag, attested tarball, test report, coverage report and SBOM) |
 | 22-24 | Governance docs and access                | Partial (SECURITY.md, CONTRIBUTING.md)                                        |
 | 25-28 | Measurement and improvement               | Planned                                          |

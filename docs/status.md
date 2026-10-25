@@ -17,7 +17,7 @@ is the source of truth for what is done and what is open.
 | Reproducibility     | Conan lockfile (#21); per-product lockfiles (#28); config package via `conanconfig.yml` and a local recipe index, pinned in `conan.lock`, with `maturity:*` custom commands and `products/` discovery, per-checkout Conan home via `.conanrc`, command tests in the `conan-commands` CI job (#31) |
 | Test report         | Sortable single-file HTML test report from `maturity:build`/`maturity:coverage` (ctest JUnit, `_tests.py`); `tests.yml` with `build-test` for both products and build types, artifacts, sticky PR comment, tests badge; coverage for both products; release asset per product; 11 required checks (#41) |
 | Versioning          | Version only from the release tag: no `version` in `conanfile.py`/`CMakeLists.txt`, `maturity:build --version`, `MATURITY_VERSION` into `version.hpp`, `maturity_app --version`, checked by ctest and in `release.yml` (#40) |
-| Releases            | Tag-triggered release with SBOM and attestations (#12); coverage report as asset (#25); auto pre-release flag and `actions/attest` (#27); reusable workflow with per-product tags (#28) |
+| Releases            | Tag-triggered release with SBOM and attestations (#12); coverage report as asset (#25); auto pre-release flag and `actions/attest` (#27); reusable workflow with per-product tags (#28); version from the tag (#40); attested test report of the released product (#41) |
 | Governance docs     | SECURITY.md, CONTRIBUTING.md (#11); checklist status (#3)            |
 | Dependency updates  | Dependabot bumps for ubuntu, conan, prek (#4 to #6); pytest 9.1.1, gcovr 8.7 (#32, #33) |
 
@@ -25,7 +25,13 @@ Closed without merging: #18 (demo PR for uncovered code), #22 (code coverage API
 needs a paid plan).
 
 Releases published: `v0.1.0` (plus rc.1, rc.2), `productA_v0.1.0`, `productB_v0.1.0`
-(plus `-rc.1` pre-releases). `productA_v0.1.0` currently carries the Latest marker.
+(plus `-rc.1` pre-releases), and the pre-releases `productA_v0.2.0-rc.1` (first tag-driven
+version), `productA_v0.2.0-rc.2` and `productB_v0.2.0-rc.1` (first with the test report; each
+contains only its own product's tests, coverage and SBOM). `productA_v0.1.0` still carries the
+Latest marker.
+
+Badges on `main` (verified through shields.io): coverage 100.0% (productA), tests 28 passed
+(both products, Release and Debug).
 
 ## Open
 

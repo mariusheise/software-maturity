@@ -19,12 +19,12 @@ around it. C, Python and Rust variants are planned.
 - 41 PRs merged or closed, no GitHub issues. 11 required checks on `main`: prek,
   build-test (productA|productB, Release|Debug), coverage (productA), coverage (productB),
   secrets (betterleaks), analyze (c-cpp), clang-tidy, conan-commands.
-- Releases: `v0.1.0` (+ rc.1, rc.2), `productA_v0.1.0`, `productB_v0.1.0` (+ `-rc.1` each).
-  Release assets are attested and verified. The `actions/attest` swap and the auto
-  pre-release flag are proven by the product releases.
-- Not verified: the rendered coverage badge after the gist cache delay (the gist JSON itself
-  is correct: schemaVersion 1, label coverage, message 100.0%, color brightgreen).
-  Check that the README badge renders green.
+- Releases: `v0.1.0` (+ rc.1, rc.2), `productA_v0.1.0`, `productB_v0.1.0` (+ `-rc.1` each),
+  `productA_v0.2.0-rc.1`, `productA_v0.2.0-rc.2`, `productB_v0.2.0-rc.1`. The 0.2.0
+  pre-releases prove the tag-driven version (`maturity_app --version` in the tarball) and the
+  per-product test report. All assets (tarball, tests, coverage, SBOM) are attested and
+  verified. `productA_v0.1.0` is still Latest.
+- Badges verified through shields.io: coverage 100.0% (productA), tests 28 passed.
 
 ## 3. How to work here
 
@@ -105,8 +105,8 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
     with the user (for example never mark product releases Latest).
 11. **C, Python, Rust variants.** Reuse the same gates: format, lint, test, coverage, SBOM,
     attestation, per-language lockfile. Keep the `protect-main` required checks consistent.
-12. **Smaller follow-ups:** verify the badge renders; consider signing tags from a developer
-    machine. The Obsidian MCP setup was parked and is unrelated to the repo.
+12. **Smaller follow-ups:** consider signing tags from a developer machine; decide on a final
+    0.2.0 (it would take the Latest marker, see item 10). The Obsidian MCP setup was parked and is unrelated to the repo.
 
 ## 6. Known gotchas
 
