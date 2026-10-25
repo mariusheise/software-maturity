@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# Regenerate conan.lock from conanfile.py (resolves the newest allowed versions).
+# Regenerate the per-product lockfiles in locks/ from conanfile.py (newest allowed versions).
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-conan lock create . --lockfile-out=conan.lock -s build_type=Release -s compiler.cppstd=20
-echo >>conan.lock
+for product in productA productB; do
+  conan lock create . --lockfile-out="locks/${product}.lock" -o "&:product=${product}" \
+    -s build_type=Release -s compiler.cppstd=20
+  echo >>"locks/${product}.lock"
+done
