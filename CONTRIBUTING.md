@@ -13,7 +13,9 @@ release branches do not share commands, profiles or packages.
 2. Make the change and run the checks locally:
    - `prek run --all-files` for formatting, secret scanning and workflow linting
    - `scripts/build.sh [Release|Debug]` to build and test
-   - `scripts/coverage.sh` to enforce the line-coverage gate
+   - `conan maturity:coverage --product productA --target linux-x86_64 --diff-base origin/main`
+     for the coverage gate, the coverage of your changed lines and the HTML report in
+     `build/coverage-report/`, as CI computes them
    - `python -m pytest conan-recipes/recipes/maturity-config/all/test` after changing the
      `maturity:*` commands or profiles (see [docs/conan-commands.md](docs/conan-commands.md))
 3. Open a pull request. Required checks must pass: `prek`, `build-test`,

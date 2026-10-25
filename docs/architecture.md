@@ -26,6 +26,11 @@ How the repository is wired. Pair this with [status.md](status.md).
       targets and build types and pins the installed config in them.
     - `conan maturity:config-lock-update` re-resolves `conanconfig.yml`, installs the result
       and re-pins it in `conan.lock` and every product lock.
+    - `conan maturity:coverage --product P --target T [--diff-base REV]` runs `conan build`
+      with the profile `maturity/coverage` (consumer-only `--coverage` flags, own build folder
+      `build/coverage/Debug`), then gcovr with the project's `gcovr.cfg`, writes the reports to
+      `build/coverage-report/` and enforces the line gate (default 90%). Developers and CI run
+      the same command.
   - Every product lock carries the config revision too, so `maturity:install` fails
     (`check_lockfile_config`) when the Conan home has a different config installed.
 - `.conanrc` sets `conan_home=./.conan2`, so every checkout (for example one per release
@@ -43,25 +48,28 @@ How the repository is wired. Pair this with [status.md](status.md).
   `conan.lock` and the product locks stay as they are.
 - `conan install .` at the root now auto-uses the config-only `conan.lock`; use
   `conan maturity:install` instead.
+- `conanfile.py` has a standard `build()` (CMake configure, build, ctest), used by
+  `conan build` and so by `maturity:coverage`.
 - Scripts read `PRODUCT` (default `productA`) and `TARGET` (default `linux-x86_64`) and call
   `conan maturity:install`: `conan_bootstrap.sh` (build config packages from the index),
-  `build.sh` (install, build, test), `coverage.sh` (Debug + gcovr, 90% line gate),
-  `clang_tidy.sh` (clang-tidy, SARIF output), `coverage_annotate.py` (summary and PR
-  comment markdown), `clang_tidy_to_sarif.py`.
+  `build.sh` (install, build, test), `clang_tidy.sh` (clang-tidy, SARIF output),
+  `clang_tidy_to_sarif.py`. Coverage has no script; it is `conan maturity:coverage`.
 
 ## Workflows (`.github/workflows/`)
 
 - `ci.yml`: `prek`, `build-test` (Release and Debug), `conan-commands` (pytest for the
-  `maturity-config` package), `coverage`, `secrets` (betterleaks),
-  `coverage-comment` (sticky PR comment, same-repo non-Dependabot PRs only), `coverage-badge`
-  (push to main only). CI builds the default product only.
+  `maturity-config` package), `secrets` (betterleaks). CI builds the default product only.
+- `coverage.yml`: `coverage` (`conan maturity:coverage`, with `--diff-base HEAD^1` on PRs for
+  the changed-lines figure), `coverage-comment` (sticky PR comment, same-repo non-Dependabot
+  PRs only), `coverage-badge` (push to main only). No `paths:` filter: `coverage` is a
+  required check.
 - `clang-tidy.yml`: runs clang-tidy, uploads SARIF to code scanning, fails on any finding.
 - `codeql.yml`: CodeQL (`analyze (c-cpp)`). `scorecard.yml`: OpenSSF Scorecard.
 - `release.yml`: reusable (`workflow_call`, input `product`). `release-productA.yml` and
   `release-productB.yml` trigger on `productA_v*` / `productB_v*`, grant
   contents/id-token/attestations write, and call it. It checks the tag matches the product,
-  builds, packages, produces a coverage HTML and a CycloneDX SBOM from the product lockfile,
-  attests them, and creates the GitHub release (pre-release if the version has a hyphen).
+  builds, packages, produces a coverage HTML (`maturity:coverage` for the product) and a
+  CycloneDX SBOM from the product lockfile, attests them, and creates the GitHub release (pre-release if the version has a hyphen).
   Verify with `gh attestation verify <file> --repo mariusheise/software-maturity
   --signer-workflow mariusheise/software-maturity/.github/workflows/release.yml`.
 
@@ -80,7 +88,7 @@ How the repository is wired. Pair this with [status.md](status.md).
 
 SHA-pinned actions, least-privilege `permissions` (top-level `{}`), concurrency groups,
 untrusted values only via `env:`. Zizmor ignores the `self-repository` rule for the
-caller workflows (`.github/zizmor.yml`). Coverage is gated at 90% lines; `src/main.cpp` is excluded.
+caller workflows (`.github/zizmor.yml`). Coverage is gated at 90% lines; `src/main.cpp` is excluded (`gcovr.cfg`).
 
 ## Working environment notes
 

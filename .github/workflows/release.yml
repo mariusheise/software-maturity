@@ -44,8 +44,8 @@ jobs:
           tar -czf "dist/maturity-${TAG}-linux-x86_64.tar.gz" -C build/Release maturity_app
       - name: Coverage report
         run: |
-          scripts/coverage.sh
-          cp coverage-report.html "dist/maturity-${TAG}-coverage.html"
+          conan maturity:coverage --product "${PRODUCT}" --target linux-x86_64
+          cp build/coverage-report/coverage-report.html "dist/maturity-${TAG}-coverage.html"
       - name: Stage the committed lockfile for the SBOM
         run: |
           mkdir sbom-src
