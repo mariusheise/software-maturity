@@ -1,0 +1,3 @@
+# Per-checkout Conan home: each checkout (e.g. per release branch) gets its own installed
+# maturity-config (profiles, maturity:* commands) and package cache.
+conan_home=./.conan2

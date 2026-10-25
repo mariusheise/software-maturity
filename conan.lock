@@ -1,0 +1,9 @@
+{
+    "version": "0.5",
+    "requires": [],
+    "build_requires": [],
+    "python_requires": [],
+    "config_requires": [
+        "maturity-config/0.1.0#62ef9a87567e86cbbcc89e912b8920a9"
+    ]
+}

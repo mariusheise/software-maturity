@@ -4,9 +4,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 product="${PRODUCT:-productA}"
+target="${TARGET:-linux-x86_64}"
 min_line_coverage="${1:-90}"
 
-conan install . --lockfile="locks/${product}.lock" -o "&:product=${product}" --build=missing -s build_type=Debug -s compiler.cppstd=20
+conan maturity:install --product="${product}" --target="${target}" --build-type=debug
 cmake --preset conan-debug -DMATURITY_COVERAGE=ON
 cmake --build --preset conan-debug
 ctest --preset conan-debug --output-on-failure

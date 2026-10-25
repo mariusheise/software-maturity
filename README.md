@@ -20,6 +20,7 @@ later, so the practices stay language-agnostic where possible.
 | What is done, what is open, what is next      | [docs/status.md](docs/status.md)                         |
 | How the CI, gates, releases and secrets work  | [docs/architecture.md](docs/architecture.md)             |
 | Checklist practice-by-practice status         | [docs/maturity-checklist.md](docs/maturity-checklist.md) |
+| `maturity:*` Conan commands and their tests   | [docs/conan-commands.md](docs/conan-commands.md)         |
 | Workflow and standards for contributors       | [CONTRIBUTING.md](CONTRIBUTING.md)                       |
 | Reporting vulnerabilities, verifying releases | [SECURITY.md](SECURITY.md)                               |
 
@@ -30,7 +31,11 @@ later, so the practices stay language-agnostic where possible.
 | `include/`, `src/`        | C++ library and demo executable                   |
 | `tests/`                  | GoogleTest unit tests                             |
 | `conanfile.py`            | Dependencies and the `product` option (Conan 2)   |
-| `locks/<product>.lock`    | One Conan lockfile per product                    |
+| `products/`               | Product variants: `<name>.yml` and `<name>.lock`  |
+| `conanconfig.yml`         | Conan configuration packages to install           |
+| `conan.lock`              | Pins the configuration package revision           |
+| `.conanrc`                | Per-checkout Conan home (`.conan2/`)              |
+| `conan-recipes/`          | Local recipe index standing in for a Conan remote |
 | `CMakeLists.txt`          | Build definition                                  |
 | `.pre-commit-config.yaml` | Hooks run by prek                                 |
 | `.github/workflows/`      | CI, clang-tidy, CodeQL, Scorecard, releases       |
@@ -45,12 +50,14 @@ Open the folder in VS Code and choose **Reopen in Container**
 
 ```sh
 scripts/build.sh                     # or: scripts/build.sh Debug
+conan maturity:install --product=productA --target=linux-x86_64 --build-type=debug
 PRODUCT=productB scripts/build.sh    # build the other product variant
 prek run --all-files
 ./build/Release/maturity_app
 ```
 
-The git hook is installed automatically (`prek install`).
+The git hook and the Conan configuration are installed automatically (`prek install`,
+`scripts/conan_bootstrap.sh`, `conan config install-pkg .`).
 
 ## Releases
 

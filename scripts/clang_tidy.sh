@@ -4,10 +4,11 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 product="${PRODUCT:-productA}"
+target="${TARGET:-linux-x86_64}"
 build_dir="build/Debug"
 
 if [[ ! -f "${build_dir}/compile_commands.json" ]]; then
-  conan install . --lockfile="locks/${product}.lock" -o "&:product=${product}" --build=missing -s build_type=Debug -s compiler.cppstd=20
+  conan maturity:install --product="${product}" --target="${target}" --build-type=debug
   cmake --preset conan-debug
 fi
 

@@ -25,9 +25,12 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install tooling
-        run: |
-          pip install -r .devcontainer/requirements.txt
-          conan profile detect --force
+        run: pip install -r .devcontainer/requirements.txt
+      - name: Keep the Conan home outside the source root
+        # Dependencies built inside the checkout would be analysed and reported as repo code.
+        run: echo "conan_home=${HOME}/.conan2" > .conanrc
+      - name: Install Conan config
+        run: scripts/conan_bootstrap.sh && conan config install-pkg .
       - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           languages: c-cpp
