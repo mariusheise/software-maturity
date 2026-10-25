@@ -92,6 +92,15 @@ jobs:
           path: coverage-report.html
           archive: false
           retention-days: 14
+      - name: Link the coverage report in the run summary
+        if: ${{ !cancelled() && steps.report.outputs.artifact-url != '' }}
+        env:
+          REPORT_URL: ${{ steps.report.outputs.artifact-url }}
+        run: |
+          {
+            echo
+            echo "Coloured source report (one HTML file, sign in to GitHub to open it; expires after 14 days): [coverage-report.html](${REPORT_URL})"
+          } >> "${GITHUB_STEP_SUMMARY}"
 
   coverage-badge:
     name: coverage badge
