@@ -5,3 +5,5 @@ CMakeUserPresets.json
 .idea/
 __pycache__/
 .pytest_cache/
+# Backup of ~/.claude while rebuilding the devcontainer (holds credentials; never commit)
+.claude-home/

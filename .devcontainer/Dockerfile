@@ -16,3 +16,7 @@ RUN python3 -m venv "$VIRTUAL_ENV" \
 # Non-root user matching the default Ubuntu "ubuntu" account (uid 1000).
 USER ubuntu
 RUN conan profile detect --force
+# Mount point of the Claude Code volume (devcontainer.json). Created here so the new volume is
+# owned by ubuntu; with CLAUDE_CONFIG_DIR it keeps sessions, memory, settings and login across
+# rebuilds.
+RUN mkdir -p /home/ubuntu/.claude
