@@ -77,6 +77,10 @@ def main(path, markdown_out=None):
             f.write(text)
     else:
         print(text)
+    output = os.environ.get("GITHUB_OUTPUT")
+    if output:
+        with open(output, "a") as f:
+            f.write(f"line-percent={pct:.1f}"+chr(10))
     if markdown_out:
         with open(markdown_out, "w") as f:
             f.write("<!-- coverage-comment -->\n" + text)
