@@ -3,5 +3,5 @@ prek>=0.5.5
 gcovr==8.3
 # Tests of the maturity-config custom commands (conan-server must match conan)
 conan-server==2.33.0
-pytest==8.4.1
+pytest==9.1.1
 WebTest==3.0.7
