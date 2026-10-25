@@ -8,7 +8,7 @@ first, then 3 and 4, then 6.
 | #     | Practice                                  | Status                                           |
 | ----- | ----------------------------------------- | ------------------------------------------------ |
 | 1     | Automated build on push/PR                | In place (Release/Debug matrix, Conan cache)     |
-| 4     | Required tests                            | In place (GoogleTest; 90% line-coverage gate) |
+| 4     | Required tests                            | In place (GoogleTest; 90% line-coverage gate, runnable locally with `conan maturity:coverage`) |
 | 5     | Static analysis and linting               | In place (clang-format, CodeQL, -Werror, clang-tidy gate) |
 | 6     | prek hooks                                | In place (local and required CI check)           |
 | 11    | Dependency scanning                       | Partial (Dependabot; dependency review open)  |

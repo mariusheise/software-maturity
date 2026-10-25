@@ -19,8 +19,11 @@ def config_lock_update(conan_api, parser, *args):
     packages = config_packages(root)
 
     # install-pkg never builds; build config packages whose remote has a recipe but no binary.
+    # install-pkg always checks the remotes for newer revisions, so --update makes this step
+    # resolve the same revision instead of an older one from the cache.
     for ref in packages:
-        run(conan_api, ["install", f"--requires={ref}", "--build=missing", "--lockfile=",
+        run(conan_api, ["install", f"--requires={ref}", f"--update={ref.split('/')[0]}",
+                        "--build=missing", "--lockfile=",
                         f"--output-folder={os.path.join(root, 'build', 'conan-config')}",
                         *profile_args(BUILD_TARGET, "release")])
     run(conan_api, ["config", "install-pkg", root, "--lockfile="])
