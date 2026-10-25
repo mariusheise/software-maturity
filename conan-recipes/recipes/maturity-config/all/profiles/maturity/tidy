@@ -1,0 +1,6 @@
+# Configure-only build for clang-tidy (maturity:tidy): own build folder build/tidy/Debug and
+# presets conan-tidy-debug, configured fresh for the requested product on every run.
+[settings]
+build_type=Debug
+[conf]
+&:tools.cmake.cmake_layout:build_folder_vars=["const.tidy"]

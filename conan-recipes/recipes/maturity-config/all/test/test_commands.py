@@ -2,6 +2,7 @@
 
 import json
 import os
+import stat
 import textwrap
 
 from conftest import (COMMANDS, FIXTURE_CONANFILE, OTHER_CONFIG_REF, TestClient, recipe_profiles,
@@ -24,7 +25,7 @@ def lock(client, product):
 def test_commands_are_listed(client):
     client.run("-h")
     for command in ("maturity:install", "maturity:lock-update", "maturity:config-lock-update",
-                    "maturity:coverage", "maturity:build"):
+                    "maturity:coverage", "maturity:build", "maturity:tidy"):
         assert command in client.out
 
 
@@ -202,3 +203,78 @@ def test_config_lock_update_builds_the_revision_install_pkg_will_pick(tmp_path):
     assert "--update=cfg" in c.out
     with open(os.path.join(c.current_folder, "conan.lock"), encoding="utf-8") as f:
         assert json.load(f)["config_requires"] == [f"cfg/0.1.0#{new_rev}"]
+
+
+def fake_tools(folder, finding=False):
+    """Stand-ins for cmake (writes a compile database) and clang-tidy (echoes a finding)."""
+    tools = {
+        "cmake": textwrap.dedent("""\
+            #!/bin/sh
+            echo "cmake $*" >> build/tidy/fake.log
+            printf '[{"directory": "%s", "file": "src/a.cpp"},
+                     {"directory": "%s", "file": "build/tidy/Debug/gen.cpp"},
+                     {"directory": "/elsewhere", "file": "dep.cpp"}]' \\
+                "$PWD" "$PWD" > build/tidy/Debug/compile_commands.json
+            """),
+        "clang-tidy": textwrap.dedent(f"""\
+            #!/bin/sh
+            [ "$1" = "--version" ] && echo "LLVM version 23.1.3" && exit 0
+            echo "clang-tidy $*" >> build/tidy/fake.log
+            {'echo "$PWD/src/a.cpp:1:1: error: bad [modernize-x]"; exit 1' if finding else 'exit 0'}
+            """),
+    }
+    for name, script in tools.items():
+        path = os.path.join(folder, name)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(script)
+        os.chmod(path, os.stat(path).st_mode | stat.S_IEXEC)
+
+
+def tidy_client(client, monkeypatch, tmp_path, finding=False):
+    client.save({"conanfile.py": COVERAGE_CONANFILE})
+    client.run("maturity:lock-update --product productA")
+    fake_tools(str(tmp_path), finding)
+    monkeypatch.setenv("PATH", str(tmp_path) + os.pathsep + os.environ["PATH"])
+    return os.path.join(client.current_folder, "build", "tidy")
+
+
+def test_tidy_configures_its_own_folder_and_checks_project_sources(client, monkeypatch, tmp_path):
+    folder = tidy_client(client, monkeypatch, tmp_path)
+    client.run("maturity:tidy --product=productA --target=linux-x86_64")
+    assert "-pr:h=maturity/tidy" in client.out
+    assert "LLVM version 23.1.3" in client.out
+    with open(os.path.join(folder, "fake.log"), encoding="utf-8") as f:
+        calls = f.read().splitlines()
+    assert calls[0] == "cmake --preset conan-tidy-debug"
+    assert calls[1] == "clang-tidy -p " + os.path.join(folder, "Debug") + " src/a.cpp"
+    reports = os.path.join(client.current_folder, "build", "tidy-report")
+    assert os.path.isfile(os.path.join(reports, "clang-tidy.log"))
+    assert os.path.isfile(os.path.join(reports, "clang-tidy.sarif"))
+    assert "clang-tidy: no findings in 1 file(s)" in client.out
+
+
+def test_tidy_fails_on_findings_and_writes_sarif(client, monkeypatch, tmp_path):
+    tidy_client(client, monkeypatch, tmp_path, finding=True)
+    client.run("maturity:tidy --product=productA --target=linux-x86_64", assert_error=True)
+    assert "clang-tidy reported 1 finding(s) in 1 file(s)" in client.out
+    with open(os.path.join(client.current_folder, "build", "tidy-report", "clang-tidy.sarif"),
+              encoding="utf-8") as f:
+        assert json.load(f)["runs"][0]["results"][0]["ruleId"] == "modernize-x"
+
+
+def test_tidy_fix_applies_then_checks(client, monkeypatch, tmp_path):
+    folder = tidy_client(client, monkeypatch, tmp_path)
+    client.run("maturity:tidy --product=productA --target=linux-x86_64 --fix")
+    with open(os.path.join(folder, "fake.log"), encoding="utf-8") as f:
+        calls = [c for c in f.read().splitlines() if c.startswith("clang-tidy")]
+    debug = os.path.join(folder, "Debug")
+    assert calls == [f"clang-tidy -p {debug} --fix src/a.cpp", f"clang-tidy -p {debug} src/a.cpp"]
+
+
+def test_tidy_needs_clang_tidy_and_the_lock(client, monkeypatch):
+    client.run("maturity:tidy --product=productA --target=linux-x86_64", assert_error=True)
+    assert "Run 'conan maturity:lock-update --product productA'" in client.out
+    client.run("maturity:lock-update --product productA")
+    monkeypatch.setenv("PATH", "")
+    client.run("maturity:tidy --product=productA --target=linux-x86_64", assert_error=True)
+    assert "clang-tidy not found" in client.out

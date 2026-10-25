@@ -3,7 +3,5 @@ build/
 CMakeUserPresets.json
 .vscode/
 .idea/
-clang-tidy.log
-clang-tidy.sarif
 __pycache__/
 .pytest_cache/
