@@ -1,6 +1,6 @@
 # Software Maturity Demonstrator
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mariusheise/software-maturity/badge)](https://scorecard.dev/viewer/?uri=github.com/mariusheise/software-maturity)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mariusheise/software-maturity/badge)](https://scorecard.dev/viewer/?uri=github.com/mariusheise/software-maturity) [![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mariusheise/9a670b7c3e531f53dabb7e1f6012e1a3/raw/coverage-main.json)](https://github.com/mariusheise/software-maturity/actions/workflows/ci.yml?query=branch%3Amain)
 
 Reference project showing how a codebase reaches a high software maturity level
 with Git and GitHub. It starts with a small C++ library and grows practice by
