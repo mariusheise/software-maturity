@@ -3,7 +3,7 @@
 For an agent (or person) continuing this work with no prior context. Read
 [README.md](../README.md), [architecture.md](architecture.md) and [status.md](status.md) first;
 this file adds the working method, pitfalls and a concrete plan per open item.
-Written 2026-10-25 against `main` after PR #31; updated after PR #36.
+Written 2026-10-25 against `main` after PR #31; updated after PR #37.
 
 ## 1. Goal
 
@@ -16,7 +16,7 @@ around it. C, Python and Rust variants are planned.
 
 ## 2. Current state (verified at handover)
 
-- 36 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
+- 37 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
   build-test (Release), build-test (Debug), secrets (betterleaks), analyze (c-cpp), coverage,
   clang-tidy, conan-commands.
 - Releases: `v0.1.0` (+ rc.1, rc.2), `productA_v0.1.0`, `productB_v0.1.0` (+ `-rc.1` each).
@@ -33,8 +33,10 @@ around it. C, Python and Rust variants are planned.
   host shell the container is reached through WSL, for example:
   `wsl.exe -e docker exec -i -w /workspaces/SoftwareMaturity <container-id> <cmd>`.
   The container id changes; find it with `wsl.exe -e docker ps`. Set `MSYS_NO_PATHCONV=1`.
-- `gh`, `jq`, clang-tidy and gcovr exist only in the container. Run the coverage gate locally
-  with `conan maturity:coverage --product productA --target linux-x86_64`, exactly as CI does.
+- `gh`, `jq`, clang-tidy and gcovr exist only in the container. Run the gates locally exactly
+  as CI does: `conan maturity:coverage` and `conan maturity:tidy` (both
+  `--product productA --target linux-x86_64`). `/opt/venv` belongs to root: after changing
+  `.devcontainer/requirements.txt`, rebuild the container rather than `pip install`.
 - Files are written through the shell (`tee` with a quoted heredoc). Avoid backslash escapes
   in generated Python or YAML (they get mangled); use `chr(10)` and check `git diff`. Keep
   long edits in separate tool calls: one giant command with several heredocs failed to parse.
@@ -71,7 +73,7 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
    check in ruleset `protect-main` (id 25796571) only after it has run once, so the check
    name exists.
 2. **Build both products in CI.** Add a `product` dimension to `build-test`
-   (`maturity:build --product`), clang-tidy (`PRODUCT` for `clang_tidy.sh`) and `coverage` in
+   (`maturity:build --product`), `clang-tidy` (`maturity:tidy --product`) and `coverage` in
    `coverage.yml` (`--product`). This changes check names (for example
    `build-test (Release, productA)`), so update the ruleset's required checks in the same
    session, otherwise PRs block. Alternative that keeps names: a separate job

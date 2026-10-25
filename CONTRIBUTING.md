@@ -16,6 +16,8 @@ release branches do not share commands, profiles or packages.
      build and run the unit tests (`--skip-test` builds without them)
    - `conan maturity:coverage --product productA --target linux-x86_64 --diff-base origin/main`
      for the coverage gate (see [Coverage](#coverage))
+   - `conan maturity:tidy --product productA --target linux-x86_64` for clang-tidy (see
+     [Static analysis](#static-analysis))
    - `python -m pytest conan-recipes/recipes/maturity-config/all/test` after changing the
      `maturity:*` commands or profiles (see [docs/conan-commands.md](docs/conan-commands.md))
 3. Open a pull request. Required checks must pass: `prek`, `build-test (Release)`,
@@ -72,6 +74,24 @@ conan maturity:coverage --product productA --target linux-x86_64 --diff-base ori
 
 On a pull request, CI posts the same summary as a comment (same-repo, non-Dependabot pull
 requests) and links the HTML report from the run summary.
+
+## Static analysis
+
+The `clang-tidy` check fails a pull request on any finding. Run the same check locally:
+
+```sh
+conan maturity:tidy --product productA --target linux-x86_64
+conan maturity:tidy --product productA --target linux-x86_64 --diff-base origin/main  # changed files
+conan maturity:tidy --product productA --target linux-x86_64 --fix                    # apply fixes
+```
+
+- It checks every source file of the project (`src/` and `tests/`) and the project's headers,
+  with the checks in `.clang-tidy`. Findings in dependencies are never reported.
+- clang-tidy is pinned in `.devcontainer/requirements.txt` (23.1.3), so the devcontainer and CI
+  give the same result. The command prints the version it uses. Dependabot proposes upgrades;
+  fix any new findings in that pull request.
+- The log and SARIF land in `build/tidy-report/`; CI uploads the SARIF to code scanning.
+- `--fix` applies clang-tidy's fixes and then checks again; review the diff before committing.
 
 ## Reporting security issues
 

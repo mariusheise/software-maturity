@@ -33,15 +33,18 @@ def test_package_contains_only_profiles_and_commands():
         "conaninfo.txt", "conanmanifest.txt",
         "extensions/commands/maturity/_coverage.py",
         "extensions/commands/maturity/_maturity.py",
+        "extensions/commands/maturity/_sarif.py",
         "extensions/commands/maturity/cmd_build.py",
         "extensions/commands/maturity/cmd_config_lock_update.py",
         "extensions/commands/maturity/cmd_coverage.py",
         "extensions/commands/maturity/cmd_install.py",
         "extensions/commands/maturity/cmd_lock_update.py",
+        "extensions/commands/maturity/cmd_tidy.py",
         "profiles/maturity/build_type/debug",
         "profiles/maturity/build_type/release",
         "profiles/maturity/coverage",
         "profiles/maturity/target/linux-x86_64",
+        "profiles/maturity/tidy",
     ]
 
 

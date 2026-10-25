@@ -1,7 +1,8 @@
 # Conan custom commands (`maturity:*`)
 
 The `maturity:*` commands wrap the Conan calls this project needs: installing and building a
-product variant for a target and build type, keeping the lockfiles current, and the coverage run. They ship inside the
+product variant for a target and build type, keeping the lockfiles current, the coverage run and
+clang-tidy. They ship inside the
 configuration package `maturity-config`, together with the profiles they use, and are tested
 next to the recipe. See [architecture.md](architecture.md) for how this fits into the build.
 
@@ -64,8 +65,7 @@ It runs `conan install` with:
 - build profiles `maturity/target/linux-x86_64` and `maturity/build_type/release` (the build machine)
 
 It prints the full command line. Unknown products, targets or build types fail with the
-available choices. A missing lockfile fails with a hint to run `lock-update`. `clang_tidy.sh`
-calls this command, reading `PRODUCT` and `TARGET` from the environment.
+available choices. A missing lockfile fails with a hint to run `lock-update`.
 
 ### `conan maturity:build`
 
@@ -156,6 +156,41 @@ On GitHub Actions it also writes the summary to the job summary and the step out
 `line-percent`, which the badge job reads. It needs `gcovr` on `PATH`, and a recipe with
 `cmake_layout()` and a `build()` that runs the tests.
 
+### `conan maturity:tidy`
+
+```sh
+conan maturity:tidy --product productA --target linux-x86_64
+conan maturity:tidy --product productA --target linux-x86_64 --diff-base origin/main
+conan maturity:tidy --product productA --target linux-x86_64 --fix
+```
+
+| Option        | Default   | Meaning                                                           |
+| ------------- | --------- | ----------------------------------------------------------------- |
+| `--product`   | required  | A variant from `products/`                                        |
+| `--target`    | required  | A profile under `maturity/target/`                                |
+| `--diff-base` | none      | Only files changed since the merge base with this revision        |
+| `--fix`       | off       | Apply clang-tidy's fixes, then check again                        |
+| `--build`     | `missing` | Passed through as Conan's `--build` policy                        |
+
+It is the `clang-tidy` CI check, runnable locally with the same result:
+
+1. Runs `conan install` with the arguments of `maturity:install` for the debug build type plus
+   the profile `maturity/tidy`, then `cmake --preset conan-tidy-debug`. It only configures, so
+   nothing is compiled. It configures fresh on every run, so the compile database always
+   matches the requested product and lockfile.
+2. Checks every translation unit in `build/tidy/Debug/compile_commands.json` that lies in the
+   repository and outside `build/`. With `--diff-base`, it checks only the files changed since
+   the merge base, including uncommitted edits.
+3. Which checks run, and which headers are reported (`HeaderFilterRegex`,
+   `ExcludeHeaderFilterRegex`), come from the project's `.clang-tidy`, so the command has
+   nothing project-specific in it.
+4. Writes `build/tidy-report/clang-tidy.log` and `clang-tidy.sarif`, the latter for GitHub code
+   scanning, and fails on any finding.
+
+It prints the clang-tidy version it found. The project pins `clang-tidy==23.1.3` (PyPI wheel)
+in `.devcontainer/requirements.txt` for both the devcontainer and CI. It needs `clang-tidy` and
+`cmake` on `PATH`.
+
 ## Products and profiles
 
 A product variant is a pair of files with the same name in `products/`:
@@ -182,6 +217,10 @@ sets `build_type=Debug`, adds `--coverage` to the compile and link flags of the 
 `build/coverage/Debug` with presets `conan-coverage-debug`, and the regular `build/Debug`
 stays uninstrumented.
 
+`maturity/tidy` is the same kind of extra profile for `maturity:tidy`: `build_type=Debug` and
+`build_folder_vars=["const.tidy"]`, so it configures `build/tidy/Debug` (presets
+`conan-tidy-debug`).
+
 Later additions such as `target/linux-armv8`, `target/windows-x86_64` or
 `build_type/relwithdebinfo` are picked up by the commands automatically.
 
@@ -203,6 +242,7 @@ exported files, so the same content gives the same revision on every machine.
 | ----------------------------- | ------------------------------------------------------------------------ |
 | Change a command or profile   | Edit the recipe, run its tests, `conan maturity:config-lock-update`; commit the recipe, `conan.lock` and `products/*.lock` |
 | Build and test                | `conan maturity:build --product <name> --target <target> [--build-type debug]` |
+| Run clang-tidy before a PR    | `conan maturity:tidy --product productA --target linux-x86_64 [--diff-base origin/main]` |
 | Upgrade dependencies          | `conan maturity:lock-update`; commit `products/*.lock`                   |
 | Check coverage before a PR    | `conan maturity:coverage --product productA --target linux-x86_64 --diff-base origin/main`; open `build/coverage-report/coverage-report.html` |
 | Add a product variant         | Add `products/<name>.yml`, run `conan maturity:lock-update --product <name>`, add a `release-<name>.yml` caller workflow (tag triggers cannot be discovered) |

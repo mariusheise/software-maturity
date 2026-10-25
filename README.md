@@ -42,7 +42,7 @@ later, so the practices stay language-agnostic where possible.
 | `.github/workflows/`      | CI, coverage, clang-tidy, CodeQL, Scorecard, releases |
 | `.github/CODEOWNERS`      | Required reviewers per path                       |
 | `.devcontainer/`          | Reproducible dev environment (Docker)             |
-| `scripts/`                | clang-tidy, Conan bootstrap                       |
+| `scripts/`                | Conan bootstrap                                   |
 
 ## Usage
 
@@ -54,12 +54,14 @@ conan maturity:build --product=productA --target=linux-x86_64                   
 conan maturity:build --product=productA --target=linux-x86_64 --build-type=debug
 conan maturity:build --product=productB --target=linux-x86_64 --skip-test        # other variant, no tests
 conan maturity:coverage --product=productA --target=linux-x86_64 --diff-base=origin/main
+conan maturity:tidy --product=productA --target=linux-x86_64                     # clang-tidy, as in CI
 prek run --all-files
 ./build/Release/maturity_app
 ```
 
 The coverage run writes its reports, including a single-file HTML report, to
-`build/coverage-report/`; see [CONTRIBUTING.md](CONTRIBUTING.md#coverage).
+`build/coverage-report/`, and clang-tidy writes its log and SARIF to `build/tidy-report/`; see
+[CONTRIBUTING.md](CONTRIBUTING.md#coverage).
 
 The git hook and the Conan configuration are installed automatically (`prek install`,
 `scripts/conan_bootstrap.sh`, `conan config install-pkg .`).

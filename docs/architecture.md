@@ -29,6 +29,10 @@ How the repository is wired. Pair this with [status.md](status.md).
       targets and build types and pins the installed config in them.
     - `conan maturity:config-lock-update` re-resolves `conanconfig.yml`, installs the result
       and re-pins it in `conan.lock` and every product lock.
+    - `conan maturity:tidy --product P --target T [--diff-base REV] [--fix]` configures
+      `build/tidy/Debug` (profile `maturity/tidy`), runs clang-tidy with the project's
+      `.clang-tidy` on all project sources (or the changed ones), writes log and SARIF to
+      `build/tidy-report/` and fails on findings.
     - `conan maturity:coverage --product P --target T [--diff-base REV]` runs `conan build`
       with the profile `maturity/coverage` (consumer-only `--coverage` flags, own build folder
       `build/coverage/Debug`), then gcovr with the project's `gcovr.cfg`, writes the reports to
@@ -55,10 +59,12 @@ How the repository is wired. Pair this with [status.md](status.md).
   --no-tests=error`), used by `conan build` and so by `maturity:build` and `maturity:coverage`.
   Its `generate()` sets `BUILD_TESTING` from `tools.build:skip_test` both ways: Conan itself
   only sets `OFF`, and a cached `OFF` would otherwise make later builds run stale test binaries.
-- Scripts: `conan_bootstrap.sh` (build config packages from the index), `clang_tidy.sh`
-  (reads `PRODUCT` and `TARGET`, calls `conan maturity:install`, writes SARIF),
-  `clang_tidy_to_sarif.py`. Building and coverage have no scripts: `ci.yml`, `codeql.yml`,
-  `release.yml` and `coverage.yml` call `conan maturity:build` and `conan maturity:coverage`.
+- The only script left is `conan_bootstrap.sh` (build config packages from the index).
+  Building, coverage and clang-tidy are `maturity:*` commands, which `ci.yml`, `codeql.yml`,
+  `release.yml`, `coverage.yml` and `clang-tidy.yml` call.
+- clang-tidy is pinned as the PyPI wheel `clang-tidy==23.1.3` in
+  `.devcontainer/requirements.txt` (not apt), so the devcontainer and CI run the same version;
+  Dependabot bumps it.
 
 ## Workflows (`.github/workflows/`)
 
@@ -68,7 +74,8 @@ How the repository is wired. Pair this with [status.md](status.md).
   the changed-lines figure), `coverage-comment` (sticky PR comment, same-repo non-Dependabot
   PRs only), `coverage-badge` (push to main only). No `paths:` filter: `coverage` is a
   required check.
-- `clang-tidy.yml`: runs clang-tidy, uploads SARIF to code scanning, fails on any finding.
+- `clang-tidy.yml`: `conan maturity:tidy` (pinned clang-tidy from `requirements.txt`), uploads
+  the SARIF to code scanning, fails on any finding.
 - `codeql.yml`: CodeQL (`analyze (c-cpp)`). `scorecard.yml`: OpenSSF Scorecard.
 - `release.yml`: reusable (`workflow_call`, input `product`). `release-productA.yml` and
   `release-productB.yml` trigger on `productA_v*` / `productB_v*`, grant
@@ -97,8 +104,9 @@ caller workflows (`.github/zizmor.yml`). Coverage is gated at 90% lines; `src/ma
 
 ## Working environment notes
 
-- Develop inside the devcontainer; `gh`, `jq` and clang-tidy are available there, not
-  necessarily on the host.
+- Develop inside the devcontainer; `gh`, `jq`, gcovr and the pinned clang-tidy are available
+  there, not necessarily on the host. After a change to `.devcontainer/requirements.txt`,
+  rebuild the container: `/opt/venv` belongs to root, so `pip install` fails without it.
 - GitHub signs squash merges; tags pushed from the container are lightweight
   (no GPG key there).
 - `actions/upload-code-coverage` and GitHub Code Quality need a Team/Enterprise plan; the

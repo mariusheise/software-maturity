@@ -5,3 +5,7 @@ Checks: >
   modernize-*,
   -modernize-use-trailing-return-type
 WarningsAsErrors: "*"
+# Report findings in the project's own headers, never in dependencies or generated files
+# (read by "conan maturity:tidy").
+HeaderFilterRegex: "/(include|src|tests)/"
+ExcludeHeaderFilterRegex: "/(\\.conan2|build)/"
