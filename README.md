@@ -1,7 +1,5 @@
 # Software Maturity Demonstrator
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mariusheise/software-maturity/badge)](https://scorecard.dev/viewer/?uri=github.com/mariusheise/software-maturity) [![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mariusheise/9a670b7c3e531f53dabb7e1f6012e1a3/raw/coverage-main.json)](https://github.com/mariusheise/software-maturity/actions/workflows/coverage.yml?query=branch%3Amain) [![Tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mariusheise/9a670b7c3e531f53dabb7e1f6012e1a3/raw/tests-main.json)](https://github.com/mariusheise/software-maturity/actions/workflows/tests.yml?query=branch%3Amain)
-
 ## Purpose
 
 A clean reference repository that shows how a codebase reaches a high software
@@ -78,3 +76,9 @@ A release builds, tests and covers only its own product. Its assets are the tarb
 report (`-tests.html`), the coverage report (`-coverage.html`) and a CycloneDX SBOM. All of
 them are attested; see [SECURITY.md](SECURITY.md) to verify them. Pre-releases do not move the
 "Latest" marker.
+
+GitHub marks only one release per repository as "Latest", so each product has its own list:
+[productA releases](../../releases?q=productA_v) and
+[productB releases](../../releases?q=productB_v). A product's `release.latest` in
+`products/<name>.yml` decides whether its final releases may take the marker (default: GitHub
+decides).

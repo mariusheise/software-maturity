@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+    outputs:
+      latest: ${{ steps.manifest.outputs.latest }}
     env:
       TAG: ${{ github.ref_name }}
       PRODUCT: ${{ inputs.product }}
@@ -42,6 +44,13 @@ jobs:
         run: pip install -r .devcontainer/requirements.txt
       - name: Install Conan config
         run: scripts/conan_bootstrap.sh && conan config install-pkg .
+      - name: Read the product's release settings from its manifest
+        id: manifest
+        run: |
+          latest="$(conan maturity:list --product "${PRODUCT}" --format=json \
+            | jq -r --arg p "${PRODUCT}" '.products[$p].release.latest')"
+          echo "release.latest: ${latest}"
+          echo "latest=${latest}" >> "${GITHUB_OUTPUT}"
       - name: Build and test
         run: conan maturity:build --product "${PRODUCT}" --target linux-x86_64 --version "${VERSION}"
       - name: Check the binary reports the release version
@@ -106,7 +115,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
+          LATEST: ${{ needs.build.outputs.latest }}
         run: |
           flags=()
           if [[ "${TAG}" == *-* ]]; then flags+=(--prerelease); fi
+          # release.latest from the product manifest: null leaves it to GitHub.
+          case "${LATEST}" in
+            true) flags+=(--latest) ;;
+            false) flags+=(--latest=false) ;;
+          esac
           gh release create "${TAG}" dist/* --verify-tag --generate-notes "${flags[@]}"

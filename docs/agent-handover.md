@@ -3,7 +3,7 @@
 For an agent (or person) continuing this work with no prior context. Read
 [README.md](../README.md), [architecture.md](architecture.md) and [status.md](status.md) first;
 this file adds the working method, pitfalls and a concrete plan per open item.
-Written 2026-10-25 against `main` after PR #31; updated after PR #41.
+Written 2026-10-25 against `main` after PR #31; updated after PR #45.
 
 ## 1. Goal
 
@@ -16,15 +16,15 @@ around it. C, Python and Rust variants are planned.
 
 ## 2. Current state (verified at handover)
 
-- 41 PRs merged or closed, no GitHub issues. 11 required checks on `main`: prek,
-  build-test (productA|productB, Release|Debug), coverage (productA), coverage (productB),
-  secrets (betterleaks), analyze (c-cpp), clang-tidy, conan-commands.
+- 45 PRs merged or closed, no GitHub issues. 7 required checks on `main`: prek, tests,
+  coverage, conan-commands, secrets (betterleaks), analyze (c-cpp), clang-tidy. `tests` and
+  `coverage` are gate jobs over all products' matrix jobs.
 - Releases: `v0.1.0` (+ rc.1, rc.2), `productA_v0.1.0`, `productB_v0.1.0` (+ `-rc.1` each),
   `productA_v0.2.0-rc.1`, `productA_v0.2.0-rc.2`, `productB_v0.2.0-rc.1`. The 0.2.0
   pre-releases prove the tag-driven version (`maturity_app --version` in the tarball) and the
   per-product test report. All assets (tarball, tests, coverage, SBOM) are attested and
   verified. `productA_v0.1.0` is still Latest.
-- Badges verified through shields.io: coverage 100.0% (productA), tests 28 passed.
+- No README badges since #45 (see open item 9).
 
 ## 3. How to work here
 
@@ -53,7 +53,7 @@ around it. C, Python and Rust variants are planned.
 
 ## 4. Rules of engagement
 
-- Branch, PR, wait for ALL 11 required checks to be `pass`, then admin-merge own PRs
+- Branch, PR, wait for ALL 7 required checks to be `pass`, then admin-merge own PRs
   (`gh pr merge N --squash --admin --delete-branch`). This is authorised for this repo only.
   Do not merge while any check is pending: read the `gh pr checks N` output for `pending`.
   This was violated once on PR #29 (docs only), so be strict.
@@ -77,8 +77,9 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
    check in ruleset `protect-main` (id 25796571) only after it has run once, so the check
    name exists.
 2. **Build both products in CI.** Done for `build-test` (`tests.yml`) and `coverage` (#41).
-   `clang-tidy` and CodeQL stay on productA. A new product means: add it to both matrices
-   and to the ruleset's required checks (the check names include the product).
+   The matrices come from `conan maturity:list` and the gate jobs cover them (#45), so a new
+   `products/<name>.yml` needs only a lock and a `release-<name>.yml` caller. `clang-tidy` and
+   CodeQL stay on productA.
 3. **Real product difference.** productB adds zlib only as a placeholder. Decide with the user
    what differs (a CMake toolchain variable, an extra source file, a dependency). Regenerate
    locks with `conan maturity:lock-update`.
@@ -98,11 +99,13 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
    issue and PR templates. Needs the checklist text.
 8. **IaC scanning (checklist 15).** Only relevant if infrastructure code appears (the
    devcontainer Dockerfile could be linted with hadolint).
-9. **Badge for release branches.** When the first `release/**` branch exists: per-branch gist
-   file, `release/**` push trigger on `coverage-badge`, extend the environment deployment
-   branches and the ruleset. Today the badge tracks `main` only.
-10. **Latest marker policy.** `gh release edit <tag> --latest` can pin it; decide the policy
-    with the user (for example never mark product releases Latest).
+9. **Private-safe badges.** Build the design in `architecture.md` ("Badges (planned, not
+   built)"): `conan maturity:badge`, SVGs on an orphan `badges` branch, relative README
+   paths. Then ask the owner before deleting the unused gist, `COVERAGE_GIST_ID`, the
+   `coverage-badge` environment and `GIST_TOKEN`. For release branches, add per-branch SVGs.
+10. **Latest marker policy.** Each manifest's `release.latest` (`true`, `false` or `null`)
+    drives `gh release create` (#45); both products use `null` (GitHub decides). Only one
+    release per repository can be Latest; per-product lists are linked from the README.
 11. **C, Python, Rust variants.** Reuse the same gates: format, lint, test, coverage, SBOM,
     attestation, per-language lockfile. Keep the `protect-main` required checks consistent.
 12. **Smaller follow-ups:** consider signing tags from a developer machine; decide on a final

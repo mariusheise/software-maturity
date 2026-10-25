@@ -240,7 +240,7 @@ shipped in the config package next to the commands, and a manifest overrides it 
 | `conf` | map of scalars | `{}` | every command: `-c user.maturity.product:<key>=<value>` |
 | `targets` | list of target profiles | all `maturity/target/*` | `lock-update` locks only these; `install`, `build`, `coverage` and `tidy` reject other `--target`s |
 | `coverage.fail_under` | number 0–100 | 90 | `maturity:coverage` default gate (`--fail-under` overrides) |
-| `release.latest` | `true`, `false`, `null` | `null` | `maturity:list` |
+| `release.latest` | `true`, `false`, `null` | `null` | `release.yml`: `--latest` / `--latest=false` for `gh release create`; `null` lets GitHub decide |
 
 ### `conan maturity:list`
 
@@ -252,7 +252,9 @@ conan maturity:list --product productB --format=json
 
 It prints the validated manifests merged over the defaults, with `targets` resolved to the
 actual profiles. JSON: `{"products": {<name>: <manifest>}, "targets": [...], "build_types": [...]}`.
-CI and scripts read product data through this command rather than parsing the YAML.
+CI and scripts read product data through this command rather than parsing the YAML:
+`tests.yml` and `coverage.yml` build their product matrix from `.products | keys`, and
+`release.yml` reads `.products[<product>].release.latest`.
 
 ### Three channels from a manifest
 

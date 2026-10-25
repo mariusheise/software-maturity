@@ -84,20 +84,28 @@ How the repository is wired. Pair this with [status.md](status.md).
 
 - `ci.yml`: `prek`, `conan-commands` (pytest for the `maturity-config` package), `secrets`
   (betterleaks).
-- `tests.yml`: `build-test (<product>, <build type>)` for productA and productB in Release and
-  Debug (`conan maturity:build`). Each job uploads its single-file test report (14 days) and
-  links it from the run summary, plus a `test-summary-*` artifact (`.md`, `.json`).
-  `test-comment` combines them into one sticky PR comment (`<!-- test-comment -->`,
-  same-repo non-Dependabot PRs). `test-badge` sums them into `tests-main.json` in the gist
-  (push to main).
-- `coverage.yml`: `coverage (<product>)` for both products (`conan maturity:coverage`, with
-  `--diff-base HEAD^1` on PRs for the changed-lines figure). Each job uploads
-  `coverage-report-<product>.html` and a `coverage-<product>` artifact (summary, XML,
-  `tests-coverage-<product>.html`, line percent). `coverage-comment` combines both products in
-  one sticky comment; `coverage-badge` tracks **productA** (push to main).
-- Matrix job outputs overwrite each other, so the comment and badge jobs read artifacts
-  (`actions: read`). Neither `tests.yml` nor `coverage.yml` has a `paths:` filter: their jobs
-  are required checks.
+- `tests.yml`:
+  - `products` runs `conan maturity:list --format=json` and outputs the product names.
+  - `build-test (<product>, <build type>)` runs for every product in Release and Debug
+    (`conan maturity:build`). Each job uploads its single-file test report (14 days) and links
+    it from the run summary, plus a `test-summary-*` artifact (`.md`, `.json`).
+  - `test-comment` combines them into one sticky PR comment (`<!-- test-comment -->`,
+    same-repo non-Dependabot PRs).
+  - The **gate** `tests` (`needs: [products, build-test]`, `if: always()`) passes only if every
+    matrix job passed. It is the workflow's one required check.
+- `coverage.yml`: the same shape:
+  - `products`
+  - `coverage (<product>)` (job id `coverage-product`, `conan maturity:coverage`, with
+    `--diff-base HEAD^1` on PRs for the changed-lines figure). Each job uploads
+    `coverage-report-<product>.html` and a `coverage-<product>` artifact (summary, XML,
+    `tests-coverage-<product>.html`, line percent).
+  - `coverage-comment` (one sticky comment, a section per product)
+  - the gate `coverage`
+- **Adding a product** (`products/<name>.yml`) needs no workflow or ruleset change: `products`
+  picks it up, and the gates cover its jobs. Only its `release-<name>.yml` caller is new, because
+  tag triggers can't be generated. Matrix job outputs overwrite each other, so the comment jobs
+  read artifacts (`actions: read`). Neither workflow has a `paths:` filter: their gates are
+  required checks, and a skipped required check counts as passing.
 - `clang-tidy.yml`: `conan maturity:tidy` (pinned clang-tidy from `requirements.txt`), uploads
   the SARIF to code scanning, fails on any finding.
 - `codeql.yml`: CodeQL (`analyze (c-cpp)`). `scorecard.yml`: OpenSSF Scorecard.
@@ -106,22 +114,52 @@ How the repository is wired. Pair this with [status.md](status.md).
   contents/id-token/attestations write, and call it. It checks the tag matches the product,
   builds, packages, produces a coverage HTML (`maturity:coverage` for the product), the test
   report of the product (`maturity-<tag>-tests.html`) and a CycloneDX SBOM from the product
-  lockfile, attests them, and creates the GitHub release (pre-release if the version has a hyphen).
+  lockfile, attests them, and creates the GitHub release (pre-release if the version has a hyphen;
+  `--latest`/`--latest=false` from the manifest's `release.latest`, nothing when `null`).
   Verify with `gh attestation verify <file> --repo mariusheise/software-maturity
   --signer-workflow mariusheise/software-maturity/.github/workflows/release.yml`.
 
 ## Repository settings (not in git)
 
 - Ruleset `protect-main` (id 25796571): default branch; no deletion, no force-push, linear
-  history, signed commits, PR required, 11 required status checks: prek,
-  build-test (productA, Release), build-test (productA, Debug), build-test (productB, Release),
-  build-test (productB, Debug), coverage (productA), coverage (productB), conan-commands,
-  secrets (betterleaks), analyze (c-cpp), clang-tidy.
+  history, signed commits, PR required, 7 required status checks: prek, tests, coverage,
+  conan-commands, secrets (betterleaks), analyze (c-cpp), clang-tidy. `tests` and `coverage`
+  are the gate jobs, so the list doesn't change when products are added.
   Repo admin may bypass via PR (own PRs are admin-merged after CI passes). Squash-merge only.
-- Badges: the secret gist holds `coverage-main.json` and `tests-main.json`; repo variable `COVERAGE_GIST_ID`;
-  environment `coverage-badge` (deploy branch `main` only) holds the secret `GIST_TOKEN`
-  (classic PAT, `gist` scope). Badge tracks `main` only.
+- **Unused, pending deletion (ask the owner first):** the gist that held the badge data
+  (`coverage-main.json`, `tests-main.json`), the repo variable `COVERAGE_GIST_ID`, and the
+  environment `coverage-badge` with its secret `GIST_TOKEN`. No workflow uses them since the
+  badges were dropped (see "Badges (planned)").
 - Dependabot is configured (`.github/dependabot.yml`).
+
+## Badges (planned, not built)
+
+The README has no badges. The earlier ones sent data to third parties, which a commercial
+product must not do:
+- shields.io fetched the values on every page view, and it can't read private repositories.
+- The "secret" gist behind them is only unlisted: anyone with its URL, which was in the README,
+  could read it.
+- The OpenSSF Scorecard badge only exists for public repositories.
+
+The planned design keeps everything inside GitHub:
+
+1. `conan maturity:badge --label L --message M --color C --output F` in the config package
+   renders a flat SVG with the standard library only (escaped text, width estimated per
+   character).
+2. On push to `main`, a badge job in `coverage.yml` and in `tests.yml` reads the existing
+   artifacts (`line-percent-productA.txt`, the `test-summary-*` totals). It renders
+   `coverage.svg` and `tests.svg` and commits them to an orphan branch `badges`
+   (`contents: write`). `protect-main` covers only the default branch. All badge jobs share
+   the concurrency group `badges` (`cancel-in-progress: false`) and push with a
+   fetch-and-rebase retry.
+3. The release `publish` job renders `release-<product>.svg` (the version; a different colour for
+   pre-releases) into the same branch.
+4. The README shows them by relative path, `![coverage](../../raw/badges/coverage.svg)`. GitHub
+   serves these through `github.com/<owner>/<repo>/raw/…` with the viewer's session, so members
+   of a private repository see them and nobody else does. Release badges link to
+   `../../releases?q=<product>_v`.
+
+When this is built, delete the unused gist, variable, environment and secret listed above.
 
 ## CI hygiene rules
 

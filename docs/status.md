@@ -15,7 +15,8 @@ is the source of truth for what is done and what is open.
 | Conan build         | `conan maturity:build` (canonical `conan build`, `--skip-test` maps to `tools.build:skip_test`) replaces `scripts/build.sh` in CI, CodeQL and releases; `BUILD_TESTING` set both ways in `generate()`; shared `graph_args` helper (#36) |
 | Conan commands      | `maturity:config-lock-update` first-run failure after a recipe edit fixed with a scoped `--update` (#35) |
 | Reproducibility     | Conan lockfile (#21); per-product lockfiles (#28); config package via `conanconfig.yml` and a local recipe index, pinned in `conan.lock`, with `maturity:*` custom commands and `products/` discovery, per-checkout Conan home via `.conanrc`, command tests in the `conan-commands` CI job (#31) |
-| Test report         | Sortable single-file HTML test report from `maturity:build`/`maturity:coverage` (ctest JUnit, `_tests.py`); `tests.yml` with `build-test` for both products and build types, artifacts, sticky PR comment, tests badge; coverage for both products; release asset per product; 11 required checks (#41) |
+| Test report         | Sortable single-file HTML test report from `maturity:build`/`maturity:coverage` (ctest JUnit, `_tests.py`); `tests.yml` with `build-test` for both products and build types, artifacts, sticky PR comment; coverage for both products; release asset per product (#41) |
+| Product manifests   | `products/<name>.yml` validated against a schema with shipped `defaults.yml`; `conan maturity:list` (text, JSON) (#43); `conf:` as `user.maturity.product:*`, `targets`, `coverage.fail_under` as the gate (#44); CI matrices from `maturity:list`, gate jobs `tests` and `coverage` so new products need no ruleset change (7 required checks), `release.latest` in `release.yml`, per-product release links; badges dropped (#45) |
 | Versioning          | Version only from the release tag: no `version` in `conanfile.py`/`CMakeLists.txt`, `maturity:build --version`, `MATURITY_VERSION` into `version.hpp`, `maturity_app --version`, checked by ctest and in `release.yml` (#40) |
 | Releases            | Tag-triggered release with SBOM and attestations (#12); coverage report as asset (#25); auto pre-release flag and `actions/attest` (#27); reusable workflow with per-product tags (#28); version from the tag (#40); attested test report of the released product (#41) |
 | Governance docs     | SECURITY.md, CONTRIBUTING.md (#11); checklist status (#3)            |
@@ -30,8 +31,9 @@ version), `productA_v0.2.0-rc.2` and `productB_v0.2.0-rc.1` (first with the test
 contains only its own product's tests, coverage and SBOM). `productA_v0.1.0` still carries the
 Latest marker.
 
-Badges on `main` (verified through shields.io): coverage 100.0% (productA), tests 28 passed
-(both products, Release and Debug).
+The README has no badges (dropped in #45: shields.io and the unlisted gist leak data and don't
+work for private repositories). A private-safe design is planned in
+[architecture.md](architecture.md#badges-planned-not-built).
 
 ## Open
 
@@ -44,14 +46,17 @@ Badges on `main` (verified through shields.io): coverage 100.0% (productA), test
 6. IaC scanning (checklist 15) if infrastructure code appears.
 7. Governance and access documents beyond SECURITY and CONTRIBUTING (checklist 22 to 24).
 8. Measurement and improvement loop (checklist 25 to 28).
-9. Release-branch support for the coverage badge: per-branch gist file, `release/**`
-   trigger, environment and ruleset extension. Do this when the first release branch exists.
-10. Decide who owns the GitHub "Latest" marker across products.
+9. Private-safe badges (coverage, tests, release version per product) on an orphan `badges`
+   branch, as designed in [architecture.md](architecture.md#badges-planned-not-built). Then,
+   with the owner's go-ahead, delete the unused gist, `COVERAGE_GIST_ID`, the `coverage-badge`
+   environment and `GIST_TOKEN`.
+10. "Latest" marker: the mechanism exists (`release.latest` in each manifest, #45); both
+    products use the default (GitHub decides). Decide a policy when a final release is due.
 11. Add C, Python and Rust variants.
 
 ## Conventions for the next session
 
-- Work on a branch, open a PR, wait for the 11 required checks, then admin-merge own PRs
+- Work on a branch, open a PR, wait for the 7 required checks, then admin-merge own PRs
   (authorised for this repo only).
 - Run `prek run --all-files` before committing; new scripts need `git add --chmod=+x`.
 - Never paste tokens in chat; `GIST_TOKEN` lives only in the `coverage-badge` environment.
