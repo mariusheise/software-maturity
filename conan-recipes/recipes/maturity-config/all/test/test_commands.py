@@ -123,6 +123,19 @@ def test_build_skip_test_sets_the_conan_test_flag(client):
     assert "skip_test=True" in client.out
 
 
+def test_build_passes_the_version_through(client):
+    # The project recipe has no version; CI passes it from the release tag.
+    unversioned = BUILD_CONANFILE.replace('    version = "1.0"\n', "") + (
+        "        self.output.info(f\"version={self.version}\")\n")
+    client.save({"conanfile.py": unversioned})
+    client.run("maturity:lock-update --product productA")
+    client.run("maturity:build --product=productA --target=linux-x86_64 --version=1.2.3-rc.1")
+    assert "--version 1.2.3-rc.1" in client.out
+    assert "version=1.2.3-rc.1" in client.out
+    client.run("maturity:build --product=productA --target=linux-x86_64")
+    assert "version=None" in client.out
+
+
 def test_build_rejects_unknown_values_and_needs_the_lock(client):
     client.run("maturity:build --product=nope --target=linux-x86_64", assert_error=True)
     assert "Unknown product 'nope'" in client.out

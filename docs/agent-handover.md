@@ -3,7 +3,7 @@
 For an agent (or person) continuing this work with no prior context. Read
 [README.md](../README.md), [architecture.md](architecture.md) and [status.md](status.md) first;
 this file adds the working method, pitfalls and a concrete plan per open item.
-Written 2026-10-25 against `main` after PR #31; updated after PR #37.
+Written 2026-10-25 against `main` after PR #31; updated after PR #40.
 
 ## 1. Goal
 
@@ -16,7 +16,7 @@ around it. C, Python and Rust variants are planned.
 
 ## 2. Current state (verified at handover)
 
-- 37 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
+- 40 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
   build-test (Release), build-test (Debug), secrets (betterleaks), analyze (c-cpp), coverage,
   clang-tidy, conan-commands.
 - Releases: `v0.1.0` (+ rc.1, rc.2), `productA_v0.1.0`, `productB_v0.1.0` (+ `-rc.1` each).
@@ -61,7 +61,8 @@ around it. C, Python and Rust variants are planned.
   must end with a newline (end-of-file-fixer aborts the commit; restage and recommit).
 - Never print or store tokens. `GIST_TOKEN` exists only as an environment secret in
   `coverage-badge`.
-- Ask before pushing release tags: each tag publishes a public release. Use a hyphenated
+- Ask before pushing release tags: each tag publishes a public release. The tag is the version;
+  there is nothing to bump in the repo. Use a hyphenated
   version (pre-release) for tests; a final release takes over the "Latest" marker.
 - Keep responses short; the user prefers concise updates.
 - CI hygiene: SHA-pin actions (Dependabot updates them), `permissions: {}` at top level, pass

@@ -81,6 +81,7 @@ conan maturity:build --product productB --target linux-x86_64 --skip-test       
 | `--target`     | required  | A profile under `maturity/target/`                          |
 | `--build-type` | `release` | A profile under `maturity/build_type/`                      |
 | `--skip-test`  | off       | Build without the unit tests                                |
+| `--version`    | none      | Version of the build, passed to `conan build --version`     |
 | `--build`      | `missing` | Passed through as Conan's `--build` policy                  |
 
 This is the canonical `conan build`: install, generate and the recipe's `build()` (CMake
@@ -96,7 +97,12 @@ valid. The recipe's `generate()` sets `BUILD_TESTING` to `ON` again for a build 
 flag. Conan alone only ever sets `OFF`, and a cached `OFF` would make the next build run the old
 test binary without rebuilding it.
 
-CI (`build-test`), CodeQL and releases run this command with tests.
+`--version` is Conan's way to supply a version the recipe doesn't declare. `conanfile.py`
+has no `version`; the release workflow passes the one from the tag. The recipe hands it to CMake
+as `MATURITY_VERSION`, or `0.0.0-dev` without the option. The root package is not in the
+lockfile, so the version never changes a lock.
+
+CI (`build-test`), CodeQL and releases run this command with tests; releases add `--version`.
 
 ### `conan maturity:lock-update`
 

@@ -26,18 +26,31 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - name: Check the tag matches the product
+      - name: Check the tag matches the product and derive the version
         run: |
           if [[ "${TAG}" != "${PRODUCT}_v"* ]]; then
             echo "Tag ${TAG} does not match product ${PRODUCT}" >&2
             exit 1
           fi
+          version="${TAG#"${PRODUCT}_v"}"
+          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "Tag ${TAG}: '${version}' is not <major>.<minor>.<patch>[-<pre-release>]" >&2
+            exit 1
+          fi
+          echo "VERSION=${version}" >> "${GITHUB_ENV}"
       - name: Install tooling
         run: pip install -r .devcontainer/requirements.txt
       - name: Install Conan config
         run: scripts/conan_bootstrap.sh && conan config install-pkg .
       - name: Build and test
-        run: conan maturity:build --product "${PRODUCT}" --target linux-x86_64
+        run: conan maturity:build --product "${PRODUCT}" --target linux-x86_64 --version "${VERSION}"
+      - name: Check the binary reports the release version
+        run: |
+          reported="$(build/Release/maturity_app --version)"
+          if [[ "${reported}" != "maturity_app ${VERSION}" ]]; then
+            echo "Expected 'maturity_app ${VERSION}', got '${reported}'" >&2
+            exit 1
+          fi
       - name: Package
         run: |
           mkdir dist

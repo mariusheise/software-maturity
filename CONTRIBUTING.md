@@ -45,7 +45,9 @@ release branches do not share commands, profiles or packages.
   `options`, run `conan maturity:lock-update --product <name>`, and add a
   `release-<name>.yml` caller (tag triggers cannot be discovered). Build one with
   `conan maturity:build --product productB --target linux-x86_64`. Releases are cut by pushing a tag `<product>_v<version>`
-  (for example `productA_v1.0.0`); a hyphen in the version makes it a pre-release. Each tag is handled
+  (for example `productA_v1.0.0`); a hyphen in the version makes it a pre-release. The tag is
+  the only source of the version: there is none in `conanfile.py` or `CMakeLists.txt`, and
+  local builds report `0.0.0-dev`. Each tag is handled
   by `release-<product>.yml`, which calls the shared `release.yml`. Verify assets with
   `gh attestation verify <file> --repo mariusheise/software-maturity --signer-workflow mariusheise/software-maturity/.github/workflows/release.yml`.
 
