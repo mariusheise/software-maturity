@@ -149,7 +149,7 @@ conan maturity:coverage --product productA --target linux-x86_64 --diff-base ori
 | -------------- | --------- | ---------------------------------------------------------------- |
 | `--product`    | required  | A variant from `products/`                                       |
 | `--target`     | required  | A profile under `maturity/target/`                               |
-| `--fail-under` | `90`      | Minimum line coverage in percent                                 |
+| `--fail-under` | manifest  | Minimum line coverage in percent (default: `coverage.fail_under`, 90) |
 | `--diff-base`  | none      | Also report coverage of lines changed since the merge base with this revision |
 | `--build`      | `missing` | Passed through as Conan's `--build` policy                       |
 
@@ -165,7 +165,10 @@ It is the coverage gate of CI, runnable locally with the same result:
    `coverage-summary.md` (the PR comment body). It prints the summary and the report path.
 5. With `--diff-base`, the summary also gives the coverage of the changed lines: the diff from
    the merge base to the working tree, so uncommitted edits count. CI passes `HEAD^1` on PRs.
-6. Fails if the line coverage is below `--fail-under`, after the reports are written.
+6. Fails if the line coverage is below the gate, after the reports are written. The gate is
+   `--fail-under` if given, otherwise the product's `coverage.fail_under` (90 from
+   `defaults.yml`). The result line names its source, e.g.
+   `meets the gate of 90% (defaults.yml)`.
 
 On GitHub Actions it also writes the summary to the job summary and the step output
 `line-percent`, which the badge job reads. It needs `gcovr` on `PATH`, and a recipe with
@@ -217,7 +220,7 @@ warning.
 description: Base product plus zlib   # people only
 options:                              # Conan options of the root recipe: -o &:<key>=<value>
   product: productB
-conf: {}                              # reserved: build settings that aren't options
+conf: {}                              # build settings that aren't options: -c user.maturity.product:<key>=<value>
 targets: [linux-x86_64]               # target profiles this product supports (default: all)
 coverage:
   fail_under: 90                      # coverage gate in percent
@@ -234,9 +237,9 @@ shipped in the config package next to the commands, and a manifest overrides it 
 |---|---|---|---|
 | `description` | string | `""` | people, `maturity:list` |
 | `options` | map of scalars | `{}` | every command: `-o &:<key>=<value>` for the root recipe |
-| `conf` | map of scalars | `{}` | `maturity:list` (passed to the recipe in a later change) |
-| `targets` | list of target profiles | all `maturity/target/*` | `maturity:list` (checked against the profiles) |
-| `coverage.fail_under` | number 0–100 | 90 | `maturity:list` |
+| `conf` | map of scalars | `{}` | every command: `-c user.maturity.product:<key>=<value>` |
+| `targets` | list of target profiles | all `maturity/target/*` | `lock-update` locks only these; `install`, `build`, `coverage` and `tidy` reject other `--target`s |
+| `coverage.fail_under` | number 0–100 | 90 | `maturity:coverage` default gate (`--fail-under` overrides) |
 | `release.latest` | `true`, `false`, `null` | `null` | `maturity:list` |
 
 ### `conan maturity:list`
@@ -250,6 +253,18 @@ conan maturity:list --product productB --format=json
 It prints the validated manifests merged over the defaults, with `targets` resolved to the
 actual profiles. JSON: `{"products": {<name>: <manifest>}, "targets": [...], "build_types": [...]}`.
 CI and scripts read product data through this command rather than parsing the YAML.
+
+### Three channels from a manifest
+
+- **`options`** reach the root recipe as Conan options (`self.options.<key>`). They change the
+  package ID and can change the dependency graph, so use them for what defines the product:
+  features and dependencies. The recipe must declare each option.
+- **`conf`** reaches the root recipe as `user.maturity.product:<key>` (read it with
+  `self.conf.get("user.maturity.product:<key>")`, e.g. in `generate()` into a CMake cache
+  variable). It doesn't change the package ID; use it for build or tool settings.
+  `lock-update` passes it too, in case a recipe reads it in `requirements()`.
+- **Everything else** (`targets`, `coverage`, `release`) is read by the commands and, through
+  `maturity:list --format=json`, by CI. It never reaches Conan.
 
 Profiles live on two axes, so new variants are new files rather than combinations:
 

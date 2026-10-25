@@ -1,9 +1,12 @@
 import os
 
+from conan.api.output import ConanOutput
 from conan.cli.command import conan_command
+from conan.errors import ConanException
 
-from _maturity import (add_path_argument, check_choice, discover_products,
-                       installed_config_refs, option_args, profile_args, profile_values, run)
+from _maturity import (add_path_argument, check_choice, conf_args, discover_products,
+                       installed_config_refs, option_args, product_targets, profile_args,
+                       profile_values, run)
 
 
 @conan_command(group="Maturity")
@@ -30,13 +33,22 @@ def lock_update(conan_api, parser, *args):
     for name, product in products.items():
         if args.product and name != args.product:
             continue
+        supported = [t for t in product_targets(conan_api, product) if t in targets]
+        if not supported:
+            message = (f"{name} does not support target '{args.target}'. Supported: "
+                       f"{', '.join(product_targets(conan_api, product))}")
+            if args.product:
+                raise ConanException(message)
+            ConanOutput().warning(f"{name} does not support target '{args.target}', skipped")
+            continue
         lock = product["lock"]
         # Start from scratch, then merge each further target and build type into the same lock.
         lock_in = ["--lockfile="]
-        for target in targets:
+        for target in supported:
             for build_type in build_types:
                 run(conan_api, ["lock", "create", root, *lock_in, f"--lockfile-out={lock}",
-                                *option_args(product), *profile_args(target, build_type)])
+                                *option_args(product), *conf_args(product),
+                                *profile_args(target, build_type)])
                 lock_in = [f"--lockfile={lock}", "--lockfile-partial"]
         for ref in installed_config_refs(conan_api):
             run(conan_api, ["lock", "add", f"--lockfile={lock}", f"--lockfile-out={lock}",

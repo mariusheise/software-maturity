@@ -367,3 +367,71 @@ def test_list_rejects_a_broken_manifest(client):
     client.run("maturity:list", assert_error=True)
     assert "products/productB.yml: unknown key 'colour'" in client.out
     client.run("maturity:list --product nope", assert_error=True)
+
+
+# The fixture whose build() reports the product conf it received.
+CONF_CONANFILE = FIXTURE_CONANFILE + (
+    "\n    def build(self):\n"
+    "        self.output.info(f\"log_level={self.conf.get('user.maturity.product:log_level')}\")\n")
+
+
+def test_manifest_conf_reaches_the_recipe(client):
+    client.save({"conanfile.py": CONF_CONANFILE,
+                 "products/productA.yml": "options:\n  product: productA\nconf:\n  log_level: debug\n"})
+    client.run("maturity:lock-update --product productA")
+    assert "-c user.maturity.product:log_level=debug" in client.out
+    client.run("maturity:build --product=productA --target=linux-x86_64")
+    assert "-c user.maturity.product:log_level=debug" in client.out
+    assert "log_level=debug" in client.out
+
+
+def two_targets(client):
+    """A second target profile next to linux-x86_64."""
+    profiles = recipe_profiles()
+    armv8 = profiles[os.path.join("profiles", "maturity", "target", "linux-x86_64")].replace(
+        "arch=x86_64", "arch=armv8")
+    client.save_home({os.path.join("profiles", "maturity", "target", "linux-armv8"): armv8})
+
+
+def test_lock_update_locks_only_the_product_targets(client):
+    two_targets(client)
+    client.save({"products/productA.yml": "options:\n  product: productA\ntargets: [linux-x86_64]\n"})
+    client.run("maturity:lock-update")
+    runs = [line for line in client.out.splitlines() if line.startswith("Running: conan lock create")]
+    a = [r for r in runs if "product=productA" in r]
+    b = [r for r in runs if "product=productB" in r]
+    assert a and not any("linux-armv8" in r for r in a)
+    assert any("target/linux-armv8" in r for r in b) and any("target/linux-x86_64" in r for r in b)
+
+
+def test_commands_reject_a_target_the_product_does_not_list(client):
+    two_targets(client)
+    client.save({"products/productA.yml": "options:\n  product: productA\ntargets: [linux-x86_64]\n"})
+    client.run("maturity:lock-update --product productA")
+    client.run("maturity:build --product=productA --target=linux-armv8", assert_error=True)
+    assert "Unknown target 'linux-armv8'. Available: linux-x86_64" in client.out
+
+
+def test_coverage_gate_comes_from_the_manifest(client):
+    client.save({"conanfile.py": COVERAGE_CONANFILE,
+                 "products/productA.yml": "options:\n  product: productA\ncoverage:\n  fail_under: 100\n"})
+    client.run("maturity:lock-update --product productA")
+    client.run("maturity:coverage --product=productA --target=linux-x86_64")
+    assert "meets the gate of 100% (products/productA.yml)" in client.out
+    client.run("maturity:coverage --product=productA --target=linux-x86_64 --fail-under=50")
+    assert "meets the gate of 50% (--fail-under)" in client.out
+    client.run("maturity:coverage --product=productB --target=linux-x86_64", assert_error=True)
+    client.run("maturity:lock-update --product productB")
+    client.run("maturity:coverage --product=productB --target=linux-x86_64")
+    assert "meets the gate of 90% (defaults.yml)" in client.out
+
+
+def test_lock_update_with_a_target_the_product_does_not_list(client):
+    two_targets(client)
+    client.save({"products/productA.yml": "options:\n  product: productA\ntargets: [linux-x86_64]\n"})
+    client.run("maturity:lock-update --product productA --target linux-armv8", assert_error=True)
+    assert "productA does not support target 'linux-armv8'. Supported: linux-x86_64" in client.out
+    client.run("maturity:lock-update --target linux-armv8")
+    assert "productA does not support target 'linux-armv8', skipped" in client.out
+    assert os.path.exists(os.path.join(client.current_folder, "products", "productB.lock"))
+    assert not os.path.exists(os.path.join(client.current_folder, "products", "productA.lock"))

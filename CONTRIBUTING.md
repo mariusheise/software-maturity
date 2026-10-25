@@ -88,8 +88,9 @@ conan maturity:coverage --product productA --target linux-x86_64 --diff-base ori
   are not executed by any test.
 - The reports are written even when the gate fails, so you can see what is missing.
 - Every run starts from zero, so you can rerun it after adding tests.
-- Leave out `--diff-base` for the total only. `--fail-under <percent>` changes the gate for a
-  local experiment; CI always uses 90.
+- Leave out `--diff-base` for the total only. The gate comes from the product's manifest
+  (`coverage.fail_under`, 90 by default); `--fail-under <percent>` changes it for a
+  local experiment; CI uses the manifest's gate.
 - `gcovr.cfg` decides which files count (`src/` and `include/`, without `src/main.cpp`).
   Change it only with a reason in the pull request.
 
