@@ -1,23 +1,27 @@
-#!/usr/bin/env python3
-"""Turn a gcovr JSON report into a job summary and PR comment body.
+"""Coverage summary for maturity:coverage (not a command itself).
 
-With COVERAGE_DIFF_BASE set (e.g. HEAD^1), also reports coverage of the lines
-changed relative to that revision.
+Turns a gcovr JSON report into a markdown summary (console, GitHub job summary, PR comment
+body). With a diff base, it also reports coverage of the lines changed since that revision.
 """
+
 import json
 import os
 import re
 import subprocess
-import sys
 
 HUNK = re.compile(r"^@@ -\S+ \+(\d+)(?:,(\d+))? @@")
+COMMENT_MARKER = "<!-- coverage-comment -->"
 
 
-def changed_lines(base):
-    out = subprocess.run(["git", "diff", "-U0", "--no-color", base, "HEAD"],
-                         check=True, capture_output=True, text=True).stdout
+def changed_lines(root, base):
+    """Lines added or changed in the working tree since the merge base of <base> and HEAD."""
+    def git(*args):
+        return subprocess.run(["git", *args], cwd=root, check=True, capture_output=True,
+                              text=True).stdout
+
+    merge_base = git("merge-base", base, "HEAD").strip()
     changed, current = {}, None
-    for row in out.splitlines():
+    for row in git("diff", "-U0", "--no-color", merge_base).splitlines():
         if row.startswith("+++ "):
             current = row[6:] if row.startswith("+++ b/") else None
             if current:
@@ -42,15 +46,11 @@ def fmt(ranges):
     return ", ".join(f"{a}-{b}" if a != b else str(a) for a, b in ranges) or "-"
 
 
-def main(path, markdown_out=None):
-    with open(path) as f:
-        files = json.load(f)["files"]
-    base = os.environ.get("COVERAGE_DIFF_BASE")
-    diff = changed_lines(base) if base else None
-
+def summarize(report, diff=None):
+    """Return (line percent, markdown) for a gcovr JSON report, optionally with changed lines."""
     rows, total, covered = [], 0, 0
     patch_total, patch_hit = 0, 0
-    for entry in sorted(files, key=lambda e: e["file"]):
+    for entry in sorted(report["files"], key=lambda e: e["file"]):
         lines = [l for l in entry["lines"] if not l.get("gcovr/excluded")]
         hit = {l["line_number"] for l in lines if l["count"] > 0}
         miss = {l["line_number"] for l in lines if l["count"] == 0}
@@ -67,25 +67,25 @@ def main(path, markdown_out=None):
     summary = ["## Line coverage", "", f"**{pct:.1f}%** ({covered}/{total} lines)"]
     if diff is not None:
         ppct = 100.0 * patch_hit / patch_total if patch_total else 100.0
-        summary += ["", f"Changed lines in this PR: **{ppct:.1f}%** "
+        summary += ["", f"Changed lines: **{ppct:.1f}%** "
                         f"({patch_hit}/{patch_total} executable lines covered)"]
     summary += ["", "| File | Lines | Cover | Missing |", "| --- | --- | --- | --- |", *rows, ""]
-    text = "\n".join(summary)
-    target = os.environ.get("GITHUB_STEP_SUMMARY")
-    if target:
-        with open(target, "a") as f:
+    return pct, "\n".join(summary)
+
+
+def write_summary(json_path, markdown_path, root, diff_base=None):
+    """Summarize <json_path> into <markdown_path> and, on GitHub Actions, the job summary and
+    the step output 'line-percent'. Returns (line percent, markdown)."""
+    with open(json_path, encoding="utf-8") as f:
+        report = json.load(f)
+    diff = changed_lines(root, diff_base) if diff_base else None
+    pct, text = summarize(report, diff)
+    with open(markdown_path, "w", encoding="utf-8") as f:
+        f.write(COMMENT_MARKER + "\n" + text)
+    if target := os.environ.get("GITHUB_STEP_SUMMARY"):
+        with open(target, "a", encoding="utf-8") as f:
             f.write(text)
-    else:
-        print(text)
-    output = os.environ.get("GITHUB_OUTPUT")
-    if output:
-        with open(output, "a") as f:
-            f.write(f"line-percent={pct:.1f}"+chr(10))
-    if markdown_out:
-        with open(markdown_out, "w") as f:
-            f.write("<!-- coverage-comment -->\n" + text)
-
-
-if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "coverage.json",
-         sys.argv[2] if len(sys.argv) > 2 else None)
+    if output := os.environ.get("GITHUB_OUTPUT"):
+        with open(output, "a", encoding="utf-8") as f:
+            f.write(f"line-percent={pct:.1f}\n")
+    return pct, text

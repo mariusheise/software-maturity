@@ -1,5 +1,5 @@
 from conan import ConanFile
-from conan.tools.cmake import cmake_layout
+from conan.tools.cmake import CMake, cmake_layout
 
 
 class MaturityConan(ConanFile):
@@ -17,3 +17,9 @@ class MaturityConan(ConanFile):
 
     def layout(self):
         cmake_layout(self)
+
+    def build(self):
+        cmake = CMake(self)
+        cmake.configure()
+        cmake.build()
+        cmake.ctest(cli_args=["--output-on-failure"])

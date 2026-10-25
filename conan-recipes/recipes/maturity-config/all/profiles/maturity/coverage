@@ -1,0 +1,10 @@
+# Coverage instrumentation for the consumer project only (&:), so dependencies built from
+# source are never instrumented. Own build folder build/coverage/Debug and presets
+# conan-coverage-debug, so the regular Debug build stays untouched.
+[settings]
+build_type=Debug
+[conf]
+&:tools.build:cxxflags+=["--coverage"]
+&:tools.build:exelinkflags+=["--coverage"]
+&:tools.build:sharedlinkflags+=["--coverage"]
+&:tools.cmake.cmake_layout:build_folder_vars=["const.coverage"]

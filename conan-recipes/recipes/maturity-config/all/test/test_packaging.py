@@ -31,12 +31,15 @@ def test_package_contains_only_profiles_and_commands():
                    for d, _, names in os.walk(folder) for f in names)
     assert files == [
         "conaninfo.txt", "conanmanifest.txt",
+        "extensions/commands/maturity/_coverage.py",
         "extensions/commands/maturity/_maturity.py",
         "extensions/commands/maturity/cmd_config_lock_update.py",
+        "extensions/commands/maturity/cmd_coverage.py",
         "extensions/commands/maturity/cmd_install.py",
         "extensions/commands/maturity/cmd_lock_update.py",
         "profiles/maturity/build_type/debug",
         "profiles/maturity/build_type/release",
+        "profiles/maturity/coverage",
         "profiles/maturity/target/linux-x86_64",
     ]
 

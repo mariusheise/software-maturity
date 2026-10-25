@@ -1,0 +1,115 @@
+name: coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    name: coverage
+    runs-on: ubuntu-24.04
+    outputs:
+      report-url: ${{ steps.report.outputs.artifact-url }}
+      line-percent: ${{ steps.summary.outputs.line-percent }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install tooling
+        run: pip install -r .devcontainer/requirements.txt
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .conan2/p
+          key: conan-${{ runner.os }}-Debug-${{ hashFiles('conanfile.py', 'products/*', 'conan.lock', 'conanconfig.yml', 'conan-recipes/**') }}
+      - name: Install Conan config
+        run: scripts/conan_bootstrap.sh && conan config install-pkg .
+      - name: Build, test, report and enforce the coverage gate
+        id: summary
+        env:
+          DIFF_BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
+        run: |
+          args=()
+          if [[ -n "${DIFF_BASE}" ]]; then args+=(--diff-base "${DIFF_BASE}"); fi
+          conan maturity:coverage --product productA --target linux-x86_64 "${args[@]}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() && hashFiles('build/coverage-report/coverage.json') != '' }}
+        with:
+          name: coverage
+          path: |
+            build/coverage-report/coverage-summary.md
+            build/coverage-report/coverage.xml
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        id: report
+        if: ${{ !cancelled() && hashFiles('build/coverage-report/coverage-report.html') != '' }}
+        with:
+          path: build/coverage-report/coverage-report.html
+          archive: false
+          retention-days: 14
+      - name: Link the coverage report in the run summary
+        if: ${{ !cancelled() && steps.report.outputs.artifact-url != '' }}
+        env:
+          REPORT_URL: ${{ steps.report.outputs.artifact-url }}
+        run: |
+          {
+            echo
+            echo "Coloured source report (one HTML file, sign in to GitHub to open it; expires after 14 days): [coverage-report.html](${REPORT_URL})"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  coverage-badge:
+    name: coverage badge
+    needs: coverage
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.COVERAGE_GIST_ID != '' && needs.coverage.outputs.line-percent != '' }}
+    runs-on: ubuntu-24.04
+    environment: coverage-badge
+    permissions: {}
+    steps:
+      - name: Publish the coverage badge data to the gist
+        env:
+          GH_TOKEN: ${{ secrets.GIST_TOKEN }}
+          GIST_ID: ${{ vars.COVERAGE_GIST_ID }}
+          PERCENT: ${{ needs.coverage.outputs.line-percent }}
+        run: |
+          color=yellow
+          if awk -v p="${PERCENT}" 'BEGIN { exit !(p >= 90) }'; then color=brightgreen; fi
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}'             "${PERCENT}" "${color}" > coverage-main.json
+          gh api -X PATCH "gists/${GIST_ID}"             -F "files[coverage-main.json][content]=@coverage-main.json" >/dev/null
+
+  coverage-comment:
+    name: coverage comment
+    needs: coverage
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage
+      - name: Create or update the coverage comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          REPORT_URL: ${{ needs.coverage.outputs.report-url }}
+        run: |
+          printf 'Coloured source report (one HTML file, sign in to GitHub to open it; expires after 14 days): [coverage-report.html](%s)\n' "${REPORT_URL}" >> coverage-summary.md
+          id=$(gh api --paginate "repos/${GH_REPO}/issues/${PR}/comments" \
+            --jq '.[] | select(.body | startswith("<!-- coverage-comment -->")) | .id' | head -n1)
+          if [ -n "${id}" ]; then
+            gh api -X PATCH "repos/${GH_REPO}/issues/comments/${id}" -F body=@coverage-summary.md
+          else
+            gh api -X POST "repos/${GH_REPO}/issues/${PR}/comments" -F body=@coverage-summary.md
+          fi

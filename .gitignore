@@ -3,10 +3,6 @@ build/
 CMakeUserPresets.json
 .vscode/
 .idea/
-coverage.xml
-coverage.json
-coverage-report.html
-coverage-summary.md
 clang-tidy.log
 clang-tidy.sarif
 __pycache__/

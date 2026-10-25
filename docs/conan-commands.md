@@ -1,7 +1,7 @@
 # Conan custom commands (`maturity:*`)
 
 The `maturity:*` commands wrap the Conan calls this project needs: installing a product variant
-for a target and build type, and keeping the lockfiles current. They ship inside the
+for a target and build type, keeping the lockfiles current, and the coverage run. They ship inside the
 configuration package `maturity-config`, together with the profiles they use, and are tested
 next to the recipe. See [architecture.md](architecture.md) for how this fits into the build.
 
@@ -64,9 +64,8 @@ It runs `conan install` with:
 - build profiles `maturity/target/linux-x86_64` and `maturity/build_type/release` (the build machine)
 
 It prints the full command line. Unknown products, targets or build types fail with the
-available choices. A missing lockfile fails with a hint to run `lock-update`. `scripts/build.sh`,
-`coverage.sh` and `clang_tidy.sh` call this command, reading `PRODUCT` and `TARGET` from the
-environment.
+available choices. A missing lockfile fails with a hint to run `lock-update`. `scripts/build.sh`
+and `clang_tidy.sh` call this command, reading `PRODUCT` and `TARGET` from the environment.
 
 ### `conan maturity:lock-update`
 
@@ -90,6 +89,39 @@ It re-resolves `conanconfig.yml` (newest version in range), installs the result,
 `conan.lock` and in every `products/*.lock`. Config packages that a remote has as a recipe but
 not as a binary, like the in-repo index today, are built first.
 
+### `conan maturity:coverage`
+
+```sh
+conan maturity:coverage --product productA --target linux-x86_64
+conan maturity:coverage --product productA --target linux-x86_64 --diff-base origin/main
+```
+
+| Option         | Default   | Meaning                                                          |
+| -------------- | --------- | ---------------------------------------------------------------- |
+| `--product`    | required  | A variant from `products/`                                       |
+| `--target`     | required  | A profile under `maturity/target/`                               |
+| `--fail-under` | `90`      | Minimum line coverage in percent                                 |
+| `--diff-base`  | none      | Also report coverage of lines changed since the merge base with this revision |
+| `--build`      | `missing` | Passed through as Conan's `--build` policy                       |
+
+It is the coverage gate of CI, runnable locally with the same result:
+
+1. Deletes `*.gcda` counters left in `build/coverage/` by earlier runs.
+2. Runs `conan build` with the arguments of `maturity:install` for the debug build type, plus
+   the profile `maturity/coverage`. The recipe's `build()` configures, builds and runs ctest.
+3. Runs gcovr on `build/coverage/`. Filters and exclusions come from the project's
+   `gcovr.cfg`, so the command has nothing project-specific in it.
+4. Writes to `build/coverage-report/`: `coverage-report.html` (one self-contained file with
+   the coloured sources), `coverage.json`, `coverage.xml` (Cobertura) and
+   `coverage-summary.md` (the PR comment body). It prints the summary and the report path.
+5. With `--diff-base`, the summary also gives the coverage of the changed lines: the diff from
+   the merge base to the working tree, so uncommitted edits count. CI passes `HEAD^1` on PRs.
+6. Fails if the line coverage is below `--fail-under`, after the reports are written.
+
+On GitHub Actions it also writes the summary to the job summary and the step output
+`line-percent`, which the badge job reads. It needs `gcovr` on `PATH`, and a recipe with
+`cmake_layout()` and a `build()` that runs the tests.
+
 ## Products and profiles
 
 A product variant is a pair of files with the same name in `products/`:
@@ -108,6 +140,13 @@ Profiles live on two axes, so new variants are new files rather than combination
 - `maturity/target/<os>-<arch>[-<compiler>]`: OS, architecture and compiler. `linux-x86_64`
   uses gcc, finds its version with `detect_api` and sets C++20. No default profile is needed.
 - `maturity/build_type/<cmake build type, lowercase>`: `release`, `debug`.
+
+`maturity/coverage` is an extra profile, not an axis, stacked last by `maturity:coverage`. It
+sets `build_type=Debug`, adds `--coverage` to the compile and link flags of the consumer only
+(`&:`, so dependencies built from source are never instrumented), and sets
+`build_folder_vars=["const.coverage"]`. The coverage build therefore lives in
+`build/coverage/Debug` with presets `conan-coverage-debug`, and the regular `build/Debug`
+stays uninstrumented.
 
 Later additions such as `target/linux-armv8`, `target/windows-x86_64` or
 `build_type/relwithdebinfo` are picked up by the commands automatically.
@@ -130,6 +169,7 @@ exported files, so the same content gives the same revision on every machine.
 | ----------------------------- | ------------------------------------------------------------------------ |
 | Change a command or profile   | Edit the recipe, run its tests, `conan maturity:config-lock-update`; commit the recipe, `conan.lock` and `products/*.lock` |
 | Upgrade dependencies          | `conan maturity:lock-update`; commit `products/*.lock`                   |
+| Check coverage before a PR    | `conan maturity:coverage --product productA --target linux-x86_64 --diff-base origin/main`; open `build/coverage-report/coverage-report.html` |
 | Add a product variant         | Add `products/<name>.yml`, run `conan maturity:lock-update --product <name>`, add a `release-<name>.yml` caller workflow (tag triggers cannot be discovered) |
 | Add a target or build type    | Add the profile file, then as for "Change a command or profile"          |
 
@@ -150,6 +190,7 @@ python -m pytest conan-recipes/recipes/maturity-config/all/test
 | Layer | File                       | What it covers                                                     |
 | ----- | -------------------------- | ------------------------------------------------------------------ |
 | 1     | `test_maturity_helpers.py` | `_maturity.py` functions on their own: product discovery, choice checks, argument building, reading `conanconfig.yml` and the installed config. No Conan home. |
+| 1     | `test_coverage_helpers.py` | `_coverage.py`: the summary table, excluded lines, changed lines from a temporary git repository (including uncommitted edits), GitHub outputs. |
 | 2     | `test_commands.py`         | Each command through the real Conan CLI, loaded straight from the source folder into a throwaway Conan home with the recipe's profiles. Checks the generated command lines, lockfile contents, error messages and the config pin check. |
 | 3     | `test_packaging.py`        | Builds the real package, checks it contains only profiles and commands, uploads it to an in-memory Conan server, installs it with `config install-pkg` as a consumer would, and runs the commands from the installed package. |
 
