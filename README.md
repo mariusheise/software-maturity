@@ -69,5 +69,7 @@ The git hook and the Conan configuration are installed automatically (`prek inst
 ## Releases
 
 Push a tag `<product>_v<version>` (for example `productA_v1.0.0`). A hyphen in the
-version (`productA_v1.0.0-rc.1`) makes it a pre-release. Assets (tarball, coverage
+version (`productA_v1.0.0-rc.1`) makes it a pre-release. The tag is the only place the version
+lives: nothing in the repository is bumped, and `maturity_app --version` of the released binary
+prints it. Builds without a tag report `0.0.0-dev`. Assets (tarball, coverage
 report, CycloneDX SBOM) are attested; see [SECURITY.md](SECURITY.md) to verify them.

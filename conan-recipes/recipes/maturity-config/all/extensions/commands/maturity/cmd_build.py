@@ -18,12 +18,16 @@ def build(conan_api, parser, *args):
     parser.add_argument("--build-type", default="release", help="Build type profile (default: release)")
     parser.add_argument("--skip-test", action="store_true",
                         help="Do not build or run the unit tests (tools.build:skip_test=True)")
+    parser.add_argument("--version", help="Version of the build, e.g. from a release tag "
+                                          "(the recipe has none)")
     parser.add_argument("--build", default="missing", help="Conan --build policy (default: missing)")
     args = parser.parse_args(*args)
 
     root = os.path.abspath(args.path)
     cmd = ["build", *graph_args(conan_api, root, args.product, args.target, args.build_type),
            f"--build={args.build}"]
+    if args.version:
+        cmd += ["--version", args.version]
     if args.skip_test:
         # Conan's own test switch: CMake.test()/ctest() do nothing and BUILD_TESTING is OFF.
         cmd += ["-c", "tools.build:skip_test=True"]

@@ -15,6 +15,7 @@ is the source of truth for what is done and what is open.
 | Conan build         | `conan maturity:build` (canonical `conan build`, `--skip-test` maps to `tools.build:skip_test`) replaces `scripts/build.sh` in CI, CodeQL and releases; `BUILD_TESTING` set both ways in `generate()`; shared `graph_args` helper (#36) |
 | Conan commands      | `maturity:config-lock-update` first-run failure after a recipe edit fixed with a scoped `--update` (#35) |
 | Reproducibility     | Conan lockfile (#21); per-product lockfiles (#28); config package via `conanconfig.yml` and a local recipe index, pinned in `conan.lock`, with `maturity:*` custom commands and `products/` discovery, per-checkout Conan home via `.conanrc`, command tests in the `conan-commands` CI job (#31) |
+| Versioning          | Version only from the release tag: no `version` in `conanfile.py`/`CMakeLists.txt`, `maturity:build --version`, `MATURITY_VERSION` into `version.hpp`, `maturity_app --version`, checked by ctest and in `release.yml` (#40) |
 | Releases            | Tag-triggered release with SBOM and attestations (#12); coverage report as asset (#25); auto pre-release flag and `actions/attest` (#27); reusable workflow with per-product tags (#28) |
 | Governance docs     | SECURITY.md, CONTRIBUTING.md (#11); checklist status (#3)            |
 | Dependency updates  | Dependabot bumps for ubuntu, conan, prek (#4 to #6); pytest 9.1.1, gcovr 8.7 (#32, #33) |

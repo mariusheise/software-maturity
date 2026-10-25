@@ -4,7 +4,7 @@ from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
 
 class MaturityConan(ConanFile):
     name = "maturity"
-    version = "0.1.0"
+    # No version here: CI passes it from the release tag (conan maturity:build --version).
     settings = "os", "compiler", "build_type", "arch"
     options = {"product": ["ANY"]}
     default_options = {"product": "productA"}
@@ -24,6 +24,7 @@ class MaturityConan(ConanFile):
         # cached by a skip-test build does not leave later builds without (rebuilt) tests.
         skip_test = self.conf.get("tools.build:skip_test", default=False, check_type=bool)
         tc.cache_variables["BUILD_TESTING"] = "OFF" if skip_test else "ON"
+        tc.cache_variables["MATURITY_VERSION"] = str(self.version) if self.version else "0.0.0-dev"
         tc.generate()
 
     def build(self):

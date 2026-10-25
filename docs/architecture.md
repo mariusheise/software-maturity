@@ -55,6 +55,14 @@ How the repository is wired. Pair this with [status.md](status.md).
   `conan.lock` and the product locks stay as they are.
 - `conan install .` at the root now auto-uses the config-only `conan.lock`; use
   `conan maturity:install` instead.
+- Versions come only from release tags. `conanfile.py` has no `version`. `release.yml` derives
+  it from the tag (`productA_v1.2.3-rc.1` gives `1.2.3-rc.1`, checked against
+  `<major>.<minor>.<patch>[-<pre-release>]`) and runs `conan maturity:build --version`.
+  `generate()` sets the cache variable `MATURITY_VERSION` (`0.0.0-dev` without a version), and
+  `CMakeLists.txt` uses its numeric part for `project(VERSION)` and the full string for the
+  generated `maturity/version.hpp`. `maturity_app --version` prints it. A ctest
+  (`maturity_app.version`) and a release step check that the binary reports the expected
+  version.
 - `conanfile.py` has a standard `build()` (CMake configure, build, `ctest --output-on-failure
   --no-tests=error`), used by `conan build` and so by `maturity:build` and `maturity:coverage`.
   Its `generate()` sets `BUILD_TESTING` from `tools.build:skip_test` both ways: Conan itself
