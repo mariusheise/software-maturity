@@ -52,6 +52,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       report-url: ${{ steps.report.outputs.artifact-url }}
+      line-percent: ${{ steps.summary.outputs.line-percent }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -71,6 +72,7 @@ jobs:
       - name: Build, test and enforce coverage gate
         run: scripts/coverage.sh
       - name: Write coverage summary
+        id: summary
         if: ${{ !cancelled() && hashFiles('coverage.json') != '' }}
         env:
           COVERAGE_DIFF_BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || '' }}
@@ -90,6 +92,25 @@ jobs:
           path: coverage-report.html
           archive: false
           retention-days: 14
+
+  coverage-badge:
+    name: coverage badge
+    needs: coverage
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.COVERAGE_GIST_ID != '' && needs.coverage.outputs.line-percent != '' }}
+    runs-on: ubuntu-24.04
+    environment: coverage-badge
+    permissions: {}
+    steps:
+      - name: Publish the coverage badge data to the gist
+        env:
+          GH_TOKEN: ${{ secrets.GIST_TOKEN }}
+          GIST_ID: ${{ vars.COVERAGE_GIST_ID }}
+          PERCENT: ${{ needs.coverage.outputs.line-percent }}
+        run: |
+          color=yellow
+          if awk -v p="${PERCENT}" 'BEGIN { exit !(p >= 90) }'; then color=brightgreen; fi
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}'             "${PERCENT}" "${color}" > coverage-main.json
+          gh api -X PATCH "gists/${GIST_ID}"             -F "files[coverage-main.json][content]=@coverage-main.json" >/dev/null
 
   coverage-comment:
     name: coverage comment
