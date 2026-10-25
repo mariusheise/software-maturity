@@ -2,6 +2,12 @@
   "name": "software-maturity",
   "build": { "dockerfile": "Dockerfile", "context": "." },
   "remoteUser": "ubuntu",
+  "mounts": [
+    "source=software-maturity-claude,target=/home/ubuntu/.claude,type=volume"
+  ],
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/ubuntu/.claude"
+  },
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },

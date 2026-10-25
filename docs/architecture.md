@@ -107,6 +107,10 @@ caller workflows (`.github/zizmor.yml`). Coverage is gated at 90% lines; `src/ma
 - Develop inside the devcontainer; `gh`, `jq`, gcovr and the pinned clang-tidy are available
   there, not necessarily on the host. After a change to `.devcontainer/requirements.txt`,
   rebuild the container: `/opt/venv` belongs to root, so `pip install` fails without it.
+- Claude Code keeps its state in the Docker volume `software-maturity-claude`, mounted at
+  `~/.claude` with `CLAUDE_CONFIG_DIR` pointing there. Sessions, memory, settings
+  (`.claude.json`) and login survive rebuilds. `docker volume rm software-maturity-claude`
+  resets them.
 - GitHub signs squash merges; tags pushed from the container are lightweight
   (no GPG key there).
 - `actions/upload-code-coverage` and GitHub Code Quality need a Team/Enterprise plan; the

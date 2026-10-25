@@ -37,6 +37,9 @@ around it. C, Python and Rust variants are planned.
   as CI does: `conan maturity:coverage` and `conan maturity:tidy` (both
   `--product productA --target linux-x86_64`). `/opt/venv` belongs to root: after changing
   `.devcontainer/requirements.txt`, rebuild the container rather than `pip install`.
+- Claude Code state (sessions, memory, `.claude.json`, login) lives in the Docker volume
+  `software-maturity-claude` at `~/.claude` (`CLAUDE_CONFIG_DIR`), so it survives rebuilds.
+  Before that volume existed (until PR #38), a rebuild wiped it.
 - Files are written through the shell (`tee` with a quoted heredoc). Avoid backslash escapes
   in generated Python or YAML (they get mangled); use `chr(10)` and check `git diff`. Keep
   long edits in separate tool calls: one giant command with several heredocs failed to parse.
