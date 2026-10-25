@@ -54,7 +54,7 @@ jobs:
           mkdir -p coverage-out
           cp build/coverage-report/coverage-report.html "coverage-out/coverage-report-${PRODUCT}.html"
           # One section per product in the combined PR comment.
-          { echo "### ${PRODUCT}"; sed '/<!-- coverage-comment -->/d' build/coverage-report/coverage-summary.md; } \
+          { echo "### ${PRODUCT}"; sed '/<!-- coverage-comment -->/d; /^## Line coverage$/d' build/coverage-report/coverage-summary.md; } \
             > "coverage-out/coverage-summary-${PRODUCT}.md"
           cp build/coverage-report/coverage.xml "coverage-out/coverage-${PRODUCT}.xml"
           if [[ -f build/coverage-report/tests.html ]]; then
