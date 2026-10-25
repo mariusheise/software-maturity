@@ -30,8 +30,9 @@ later, so the practices stay language-agnostic where possible.
 | `include/`, `src/`        | C++ library and demo executable                   |
 | `tests/`                  | GoogleTest unit tests                             |
 | `conanfile.py`            | Dependencies and the `product` option (Conan 2)   |
-| `locks/<product>.lock`    | One Conan lockfile per product                    |
+| `products/`               | Product variants: `<name>.yml` and `<name>.lock`  |
 | `conanconfig.yml`         | Conan configuration packages to install           |
+| `conan.lock`              | Pins the configuration package revision           |
 | `conan-recipes/`          | Local recipe index standing in for a Conan remote |
 | `CMakeLists.txt`          | Build definition                                  |
 | `.pre-commit-config.yaml` | Hooks run by prek                                 |
@@ -47,13 +48,14 @@ Open the folder in VS Code and choose **Reopen in Container**
 
 ```sh
 scripts/build.sh                     # or: scripts/build.sh Debug
+conan maturity:install --product=productA --target=linux-x86_64 --build-type=debug
 PRODUCT=productB scripts/build.sh    # build the other product variant
 prek run --all-files
 ./build/Release/maturity_app
 ```
 
 The git hook and the Conan configuration are installed automatically (`prek install`,
-`scripts/conan_config.sh`).
+`scripts/conan_bootstrap.sh`, `conan config install-pkg .`).
 
 ## Releases
 

@@ -1,4 +1,4 @@
-# Conan configuration packages, installed with "conan config install-pkg ." (see
-# scripts/conan_config.sh). Add "urls:" here once the packages live in a real remote.
+# Conan configuration packages, installed with "conan config install-pkg ." and pinned in
+# conan.lock. Add "urls:" here once the packages live in a real remote.
 packages:
   - maturity-config/[>=0.1 <1]

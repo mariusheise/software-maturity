@@ -6,7 +6,7 @@ class MaturityConan(ConanFile):
     name = "maturity"
     version = "0.1.0"
     settings = "os", "compiler", "build_type", "arch"
-    options = {"product": ["productA", "productB"]}
+    options = {"product": ["ANY"]}
     default_options = {"product": "productA"}
     generators = "CMakeDeps", "CMakeToolchain"
 
