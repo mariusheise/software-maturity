@@ -126,10 +126,9 @@ How the repository is wired. Pair this with [status.md](status.md).
   conan-commands, secrets (betterleaks), analyze (c-cpp), clang-tidy. `tests` and `coverage`
   are the gate jobs, so the list doesn't change when products are added.
   Repo admin may bypass via PR (own PRs are admin-merged after CI passes). Squash-merge only.
-- **Leftovers of the dropped badges (ask the owner before deleting):** the gist that held the
-  badge data (`coverage-main.json`, `tests-main.json`; readable by anyone with its URL) and the
-  now empty environment `coverage-badge`. The repo variable `COVERAGE_GIST_ID` and the secret
-  `GIST_TOKEN` are already deleted. No workflow uses any of them (see "Badges (planned)").
+- No environments, repository variables or secrets. The badge setup (gist, `COVERAGE_GIST_ID`,
+  environment `coverage-badge`, `GIST_TOKEN`) was deleted with the badges (see "Badges
+  (planned)").
 - Dependabot is configured (`.github/dependabot.yml`).
 
 ## Badges (planned, not built)
@@ -159,7 +158,6 @@ The planned design keeps everything inside GitHub:
    of a private repository see them and nobody else does. Release badges link to
    `../../releases?q=<product>_v`.
 
-When this is built, delete the leftover gist and environment listed above.
 
 ## CI hygiene rules
 

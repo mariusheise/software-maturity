@@ -60,8 +60,8 @@ around it. C, Python and Rust variants are planned.
   This was violated once on PR #29 (docs only), so be strict.
 - Run `prek run --all-files` before committing. New scripts need `git add --chmod=+x`. Files
   must end with a newline (end-of-file-fixer aborts the commit; restage and recommit).
-- Never print or store tokens. The repo holds no secrets of its own (`GIST_TOKEN` was
-  deleted with the badges).
+- Never print or store tokens. The repo has no secrets, variables or environments (the badge
+  setup was deleted with the badges).
 - Ask before pushing release tags: each tag publishes a public release. The tag is the version;
   there is nothing to bump in the repo. Use a hyphenated
   version (pre-release) for tests; a final release takes over the "Latest" marker.
@@ -87,8 +87,9 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
 4. **CI health (checklist 25-28).** Scheduled workflow plus `scripts/ci_health.py` using
    `gh api` for runs and jobs: success rate on main, P50/P95 duration, queue time, flaky
    re-runs (`run_attempt > 1`), time to green per PR, Conan cache hit rate. Write a job
-   summary table, upload JSON, persist history (data branch or gist; API history is about 90
-   days). Optional issue when thresholds breach. Needs `actions: read`, `contents: read`.
+   summary table, upload JSON, persist history (a data branch, not a gist, which is readable
+   by URL; API history is about 90 days). Optional issue when thresholds breach. Needs
+   `actions: read`, `contents: read`.
    DORA-style delivery metrics can come from PR merge times and release tags.
 5. **Fuzzing, benchmarks, mutation, E2E (checklist 7-10).** Candidates: a libFuzzer target for
    the password and stats code, Google Benchmark with trend storage, mutation testing with
@@ -102,9 +103,8 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
    devcontainer Dockerfile could be linted with hadolint).
 9. **Private-safe badges.** Build the design in `architecture.md` ("Badges (planned, not
    built)"): `conan maturity:badge`, SVGs on an orphan `badges` branch, relative README
-   paths. Then ask the owner before deleting the leftover gist and the empty
-   `coverage-badge` environment (`COVERAGE_GIST_ID` and `GIST_TOKEN` are already gone). For
-   release branches, add per-branch SVGs.
+   paths. The old gist, variable, environment and secret are already deleted. For release
+   branches, add per-branch SVGs.
 10. **Latest marker policy.** Each manifest's `release.latest` (`true`, `false` or `null`)
     drives `gh release create` (#45); both products use `null` (GitHub decides). Only one
     release per repository can be Latest; per-product lists are linked from the README.
@@ -123,7 +123,6 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
 - The coverage PR comment job only runs for same-repo, non-Dependabot PRs.
 - clang-tidy findings appear twice on a PR (bot review comment plus check annotation); this is
   GitHub behaviour, not a bug.
-- The raw gist URL can serve stale content for minutes; use the gist API to confirm.
 - `src/main.cpp` is excluded from coverage (`gcovr.cfg`); the gate is 90% lines. The coverage
   build lives in `build/coverage/Debug` (profile `maturity/coverage`), separate from `build/Debug`.
 - The coverage jobs are in `coverage.yml` and the test jobs (`build-test`, `test-comment`,

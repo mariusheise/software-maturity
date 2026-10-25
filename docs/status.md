@@ -47,9 +47,8 @@ work for private repositories). A private-safe design is planned in
 7. Governance and access documents beyond SECURITY and CONTRIBUTING (checklist 22 to 24).
 8. Measurement and improvement loop (checklist 25 to 28).
 9. Private-safe badges (coverage, tests, release version per product) on an orphan `badges`
-   branch, as designed in [architecture.md](architecture.md#badges-planned-not-built). Then,
-   with the owner's go-ahead, delete the leftover gist and the empty `coverage-badge`
-   environment (`COVERAGE_GIST_ID` and `GIST_TOKEN` are already gone).
+   branch, as designed in [architecture.md](architecture.md#badges-planned-not-built). The old
+   gist-based setup is fully deleted.
 10. "Latest" marker: the mechanism exists (`release.latest` in each manifest, #45); both
     products use the default (GitHub decides). Decide a policy when a final release is due.
 11. Add C, Python and Rust variants.
