@@ -15,6 +15,7 @@ is the source of truth for what is done and what is open.
 | Conan build         | `conan maturity:build` (canonical `conan build`, `--skip-test` maps to `tools.build:skip_test`) replaces `scripts/build.sh` in CI, CodeQL and releases; `BUILD_TESTING` set both ways in `generate()`; shared `graph_args` helper (#36) |
 | Conan commands      | `maturity:config-lock-update` first-run failure after a recipe edit fixed with a scoped `--update` (#35) |
 | Reproducibility     | Conan lockfile (#21); per-product lockfiles (#28); config package via `conanconfig.yml` and a local recipe index, pinned in `conan.lock`, with `maturity:*` custom commands and `products/` discovery, per-checkout Conan home via `.conanrc`, command tests in the `conan-commands` CI job (#31) |
+| Test report         | Sortable single-file HTML test report from `maturity:build`/`maturity:coverage` (ctest JUnit, `_tests.py`); `tests.yml` with `build-test` for both products and build types, artifacts, sticky PR comment, tests badge; coverage for both products; release asset per product; 11 required checks (#41) |
 | Versioning          | Version only from the release tag: no `version` in `conanfile.py`/`CMakeLists.txt`, `maturity:build --version`, `MATURITY_VERSION` into `version.hpp`, `maturity_app --version`, checked by ctest and in `release.yml` (#40) |
 | Releases            | Tag-triggered release with SBOM and attestations (#12); coverage report as asset (#25); auto pre-release flag and `actions/attest` (#27); reusable workflow with per-product tags (#28) |
 | Governance docs     | SECURITY.md, CONTRIBUTING.md (#11); checklist status (#3)            |
@@ -29,7 +30,8 @@ Releases published: `v0.1.0` (plus rc.1, rc.2), `productA_v0.1.0`, `productB_v0.
 ## Open
 
 1. Add a dependency-review check (checklist 11).
-2. Build both products in CI (a product matrix changes required check names; update the ruleset).
+2. Build both products in CI: done for tests and coverage (#41); clang-tidy and CodeQL stay on
+   productA (same sources).
 3. Give productB a real difference, or replace the placeholder zlib dependency.
 4. Fuzzing, performance benchmarks, E2E and mutation testing (checklist 7 to 10).
 5. Runner strategy and more reusable workflows (checklist 2 and 3).
@@ -43,7 +45,7 @@ Releases published: `v0.1.0` (plus rc.1, rc.2), `productA_v0.1.0`, `productB_v0.
 
 ## Conventions for the next session
 
-- Work on a branch, open a PR, wait for the 8 required checks, then admin-merge own PRs
+- Work on a branch, open a PR, wait for the 11 required checks, then admin-merge own PRs
   (authorised for this repo only).
 - Run `prek run --all-files` before committing; new scripts need `git add --chmod=+x`.
 - Never paste tokens in chat; `GIST_TOKEN` lives only in the `coverage-badge` environment.

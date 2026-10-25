@@ -102,7 +102,16 @@ has no `version`; the release workflow passes the one from the tag. The recipe h
 as `MATURITY_VERSION`, or `0.0.0-dev` without the option. The root package is not in the
 lockfile, so the version never changes a lock.
 
-CI (`build-test`), CodeQL and releases run this command with tests; releases add `--version`.
+Unless `--skip-test` is given, it also writes a **test report** to `build/test-report/`:
+`<product>-<build type>.html` (one self-contained, sortable file), `.md` (counts and slowest
+tests; also appended to the GitHub job summary) and `.json` (the totals). It passes
+`-c user.maturity:junit=<file>.xml`, and the recipe's `build()` hands that path to
+`ctest --output-junit`; `_tests.py` turns the JUnit XML into the report. A failing test still
+produces the report before the command fails. `maturity:coverage` does the same, writing
+`build/coverage-report/tests.html`.
+
+CI (`build-test` in `tests.yml`, for both products and build types), CodeQL and releases run
+this command with tests; releases add `--version`.
 
 ### `conan maturity:lock-update`
 

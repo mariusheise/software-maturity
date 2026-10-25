@@ -1,8 +1,12 @@
+import datetime
 import os
 
 from conan.cli.command import conan_command
 
 from _maturity import add_path_argument, graph_args, run
+from _tests import run_with_report
+
+REPORT_FOLDER = os.path.join("build", "test-report")
 
 
 @conan_command(group="Maturity")
@@ -31,4 +35,12 @@ def build(conan_api, parser, *args):
     if args.skip_test:
         # Conan's own test switch: CMake.test()/ctest() do nothing and BUILD_TESTING is OFF.
         cmd += ["-c", "tools.build:skip_test=True"]
-    run(conan_api, cmd)
+        run(conan_api, cmd)
+        return
+
+    stem = os.path.join(root, REPORT_FOLDER, f"{args.product}-{args.build_type}")
+    cmd += ["-c", f"user.maturity:junit={stem}.xml"]
+    title = f"Tests: {args.product}, {args.build_type}"
+    meta = (f"{args.target}, version {args.version or '0.0.0-dev'}, "
+            f"{datetime.datetime.now(datetime.timezone.utc):%Y-%m-%d %H:%M} UTC")
+    run_with_report(lambda: run(conan_api, cmd), stem + ".xml", stem, title, meta)

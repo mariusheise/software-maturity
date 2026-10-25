@@ -55,6 +55,8 @@ jobs:
         run: |
           mkdir dist
           tar -czf "dist/maturity-${TAG}-linux-x86_64.tar.gz" -C build/Release maturity_app
+          # Test report of the released product only (exact name, never a glob).
+          cp "build/test-report/${PRODUCT}-release.html" "dist/maturity-${TAG}-tests.html"
       - name: Coverage report
         run: |
           conan maturity:coverage --product "${PRODUCT}" --target linux-x86_64
@@ -94,6 +96,7 @@ jobs:
           subject-path: |
             dist/*.tar.gz
             dist/*-coverage.html
+            dist/*-tests.html
       - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: dist/*.tar.gz

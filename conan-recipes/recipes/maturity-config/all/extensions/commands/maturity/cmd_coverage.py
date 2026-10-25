@@ -9,6 +9,7 @@ from conan.errors import ConanException
 
 from _coverage import write_summary
 from _maturity import add_path_argument, graph_args, run
+from _tests import run_with_report
 
 # Set by the maturity/coverage profile (build_folder_vars=["const.coverage"]).
 BUILD_FOLDER = os.path.join("build", "coverage")
@@ -42,7 +43,11 @@ def coverage(conan_api, parser, *args):
     for stale in glob.glob(os.path.join(root, BUILD_FOLDER, "**", "*.gcda"), recursive=True):
         os.remove(stale)
 
-    run(conan_api, ["build", *build_args, "-pr:h=maturity/coverage", f"--build={args.build}"])
+    tests = os.path.join(root, REPORT_FOLDER, "tests")
+    run_with_report(
+        lambda: run(conan_api, ["build", *build_args, "-pr:h=maturity/coverage",
+                                f"--build={args.build}", "-c", f"user.maturity:junit={tests}.xml"]),
+        tests + ".xml", tests, f"Tests: {args.product}, coverage (debug)", args.target)
     if not os.path.isdir(os.path.join(root, BUILD_FOLDER)):
         raise ConanException(f"No build folder {BUILD_FOLDER}. The recipe needs cmake_layout() "
                              "and a build() that builds and runs the tests")

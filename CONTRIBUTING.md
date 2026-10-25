@@ -20,9 +20,10 @@ release branches do not share commands, profiles or packages.
      [Static analysis](#static-analysis))
    - `python -m pytest conan-recipes/recipes/maturity-config/all/test` after changing the
      `maturity:*` commands or profiles (see [docs/conan-commands.md](docs/conan-commands.md))
-3. Open a pull request. Required checks must pass: `prek`, `build-test (Release)`,
-   `build-test (Debug)`, `conan-commands`, `secrets (betterleaks)`, `analyze (c-cpp)`,
-   `clang-tidy` and `coverage`.
+3. Open a pull request. Required checks must pass: `prek`, `build-test (productA, Release)`, `build-test (productA, Debug)`,
+   `build-test (productB, Release)`, `build-test (productB, Debug)`, `coverage (productA)`,
+   `coverage (productB)`, `conan-commands`, `secrets (betterleaks)`, `analyze (c-cpp)` and
+   `clang-tidy`.
 4. Code Owners review is required for paths listed in `.github/CODEOWNERS`.
    Changes to secret-scan exclusions (`.betterleaks.toml`) always need it.
 5. Pull requests are squash-merged; commits must be signed.
@@ -50,6 +51,23 @@ release branches do not share commands, profiles or packages.
   local builds report `0.0.0-dev`. Each tag is handled
   by `release-<product>.yml`, which calls the shared `release.yml`. Verify assets with
   `gh attestation verify <file> --repo mariusheise/software-maturity --signer-workflow mariusheise/software-maturity/.github/workflows/release.yml`.
+
+## Test report
+
+Every `conan maturity:build` that runs the tests also writes a test report:
+
+- `build/test-report/<product>-<build type>.html`: one self-contained file, no server needed.
+  It shows tiles with the counts (passed, failed, skipped, disabled) and the total time, and a
+  table with one row per test, its status and its time. Click a column to sort it and a tile
+  to filter. Failed and skipped tests have their output in the row.
+- The console, and on CI the job summary, show the counts and the slowest tests.
+- The report is written even when a test fails, so you can see what failed. `--skip-test`
+  writes none.
+- A gtest `GTEST_SKIP()` shows as skipped and a `DISABLED_` test as disabled.
+
+On a pull request, CI builds both products in Release and Debug. Each combination links its
+HTML report from the run summary, and one sticky comment summarises all four. Releases attach
+the report of the released product.
 
 ## Coverage
 

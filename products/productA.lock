@@ -6,6 +6,6 @@
     "build_requires": [],
     "python_requires": [],
     "config_requires": [
-        "maturity-config/0.1.0#0ce965e76f2d051f6d882dc1fc5ba6e8"
+        "maturity-config/0.1.0#4379dad6c0c455b35e498c0caa95d236"
     ]
 }
