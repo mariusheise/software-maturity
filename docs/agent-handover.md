@@ -3,7 +3,7 @@
 For an agent (or person) continuing this work with no prior context. Read
 [README.md](../README.md), [architecture.md](architecture.md) and [status.md](status.md) first;
 this file adds the working method, pitfalls and a concrete plan per open item.
-Written 2026-10-25 against `main` after PR #31.
+Written 2026-10-25 against `main` after PR #31; updated after PR #35.
 
 ## 1. Goal
 
@@ -16,7 +16,7 @@ around it. C, Python and Rust variants are planned.
 
 ## 2. Current state (verified at handover)
 
-- 31 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
+- 35 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
   build-test (Release), build-test (Debug), secrets (betterleaks), analyze (c-cpp), coverage,
   clang-tidy, conan-commands.
 - Releases: `v0.1.0` (+ rc.1, rc.2), `productA_v0.1.0`, `productB_v0.1.0` (+ `-rc.1` each).
@@ -33,8 +33,8 @@ around it. C, Python and Rust variants are planned.
   host shell the container is reached through WSL, for example:
   `wsl.exe -e docker exec -i -w /workspaces/SoftwareMaturity <container-id> <cmd>`.
   The container id changes; find it with `wsl.exe -e docker ps`. Set `MSYS_NO_PATHCONV=1`.
-- `gh`, `jq` and clang-tidy exist only in the container. gcovr may not be installed there; the
-  coverage gate is then verified in CI.
+- `gh`, `jq`, clang-tidy and gcovr exist only in the container. Run the coverage gate locally
+  with `conan maturity:coverage --product productA --target linux-x86_64`, exactly as CI does.
 - Files are written through the shell (`tee` with a quoted heredoc). Avoid backslash escapes
   in generated Python or YAML (they get mangled); use `chr(10)` and check `git diff`. Keep
   long edits in separate tool calls: one giant command with several heredocs failed to parse.
@@ -70,8 +70,8 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
    on pull requests with `pull-requests: read`. Free on public repos. Add it as a required
    check in ruleset `protect-main` (id 25796571) only after it has run once, so the check
    name exists.
-2. **Build both products in CI.** Add a `product` dimension to `build-test`, coverage and
-   clang-tidy, passing `PRODUCT` to the scripts. This changes check names (for example
+2. **Build both products in CI.** Add a `product` dimension to `build-test` and clang-tidy
+   (passing `PRODUCT` to the scripts) and to `coverage` in `coverage.yml` (`--product`). This changes check names (for example
    `build-test (Release, productA)`), so update the ruleset's required checks in the same
    session, otherwise PRs block. Alternative that keeps names: a separate job
    `build-test-products`.
@@ -115,7 +115,10 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
 - clang-tidy findings appear twice on a PR (bot review comment plus check annotation); this is
   GitHub behaviour, not a bug.
 - The raw gist URL can serve stale content for minutes; use the gist API to confirm.
-- `src/main.cpp` is excluded from coverage; the gate is 90% lines.
+- `src/main.cpp` is excluded from coverage (`gcovr.cfg`); the gate is 90% lines. The coverage
+  build lives in `build/coverage/Debug` (profile `maturity/coverage`), separate from `build/Debug`.
+- The coverage jobs (`coverage`, `coverage-comment`, `coverage-badge`) are in `coverage.yml`,
+  not `ci.yml`.
 - `conan config install-pkg` checks every enabled remote; an unreachable conancenter can
   fail it once. Rerun before debugging.
 - Plain `conan install .` at the root picks up the config-only `conan.lock`; use

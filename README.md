@@ -1,6 +1,6 @@
 # Software Maturity Demonstrator
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mariusheise/software-maturity/badge)](https://scorecard.dev/viewer/?uri=github.com/mariusheise/software-maturity) [![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mariusheise/9a670b7c3e531f53dabb7e1f6012e1a3/raw/coverage-main.json)](https://github.com/mariusheise/software-maturity/actions/workflows/ci.yml?query=branch%3Amain)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mariusheise/software-maturity/badge)](https://scorecard.dev/viewer/?uri=github.com/mariusheise/software-maturity) [![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mariusheise/9a670b7c3e531f53dabb7e1f6012e1a3/raw/coverage-main.json)](https://github.com/mariusheise/software-maturity/actions/workflows/coverage.yml?query=branch%3Amain)
 
 ## Purpose
 
@@ -37,11 +37,12 @@ later, so the practices stay language-agnostic where possible.
 | `.conanrc`                | Per-checkout Conan home (`.conan2/`)              |
 | `conan-recipes/`          | Local recipe index standing in for a Conan remote |
 | `CMakeLists.txt`          | Build definition                                  |
+| `gcovr.cfg`               | Which files count for coverage                    |
 | `.pre-commit-config.yaml` | Hooks run by prek                                 |
-| `.github/workflows/`      | CI, clang-tidy, CodeQL, Scorecard, releases       |
+| `.github/workflows/`      | CI, coverage, clang-tidy, CodeQL, Scorecard, releases |
 | `.github/CODEOWNERS`      | Required reviewers per path                       |
 | `.devcontainer/`          | Reproducible dev environment (Docker)             |
-| `scripts/`                | build, coverage, clang-tidy, lockfile, CI helpers |
+| `scripts/`                | build, clang-tidy, Conan bootstrap                |
 
 ## Usage
 
@@ -52,9 +53,13 @@ Open the folder in VS Code and choose **Reopen in Container**
 scripts/build.sh                     # or: scripts/build.sh Debug
 conan maturity:install --product=productA --target=linux-x86_64 --build-type=debug
 PRODUCT=productB scripts/build.sh    # build the other product variant
+conan maturity:coverage --product=productA --target=linux-x86_64 --diff-base=origin/main
 prek run --all-files
 ./build/Release/maturity_app
 ```
+
+The coverage run writes its reports, including a single-file HTML report, to
+`build/coverage-report/`; see [CONTRIBUTING.md](CONTRIBUTING.md#coverage).
 
 The git hook and the Conan configuration are installed automatically (`prek install`,
 `scripts/conan_bootstrap.sh`, `conan config install-pkg .`).

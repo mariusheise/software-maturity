@@ -87,7 +87,10 @@ conan maturity:config-lock-update
 
 It re-resolves `conanconfig.yml` (newest version in range), installs the result, and pins it in
 `conan.lock` and in every `products/*.lock`. Config packages that a remote has as a recipe but
-not as a binary, like the in-repo index today, are built first.
+not as a binary, like the in-repo index today, are built first. That build step passes
+`--update=<package>`, because `install-pkg` always checks the remotes: without it, the build
+step took the older revision from the cache, and the first run after a recipe edit failed with
+"Missing prebuilt package" (fixed in #35).
 
 ### `conan maturity:coverage`
 

@@ -14,12 +14,12 @@ release branches do not share commands, profiles or packages.
    - `prek run --all-files` for formatting, secret scanning and workflow linting
    - `scripts/build.sh [Release|Debug]` to build and test
    - `conan maturity:coverage --product productA --target linux-x86_64 --diff-base origin/main`
-     for the coverage gate, the coverage of your changed lines and the HTML report in
-     `build/coverage-report/`, as CI computes them
+     for the coverage gate (see [Coverage](#coverage))
    - `python -m pytest conan-recipes/recipes/maturity-config/all/test` after changing the
      `maturity:*` commands or profiles (see [docs/conan-commands.md](docs/conan-commands.md))
-3. Open a pull request. Required checks must pass: `prek`, `build-test`,
-   `secrets (betterleaks)`, `analyze (c-cpp)` and `coverage`.
+3. Open a pull request. Required checks must pass: `prek`, `build-test (Release)`,
+   `build-test (Debug)`, `conan-commands`, `secrets (betterleaks)`, `analyze (c-cpp)`,
+   `clang-tidy` and `coverage`.
 4. Code Owners review is required for paths listed in `.github/CODEOWNERS`.
    Changes to secret-scan exclusions (`.betterleaks.toml`) always need it.
 5. Pull requests are squash-merged; commits must be signed.
@@ -45,6 +45,32 @@ release branches do not share commands, profiles or packages.
   (for example `productA_v1.0.0`); a hyphen in the version makes it a pre-release. Each tag is handled
   by `release-<product>.yml`, which calls the shared `release.yml`. Verify assets with
   `gh attestation verify <file> --repo mariusheise/software-maturity --signer-workflow mariusheise/software-maturity/.github/workflows/release.yml`.
+
+## Coverage
+
+The `coverage` check fails a pull request below 90% line coverage. Run the same check locally
+before opening a pull request:
+
+```sh
+conan maturity:coverage --product productA --target linux-x86_64 --diff-base origin/main
+```
+
+- It builds with coverage instrumentation in `build/coverage/Debug`, runs the unit tests,
+  and checks the gate. Your normal `build/Debug` is not touched.
+- It prints the total, the coverage of the lines you changed since you branched from
+  `origin/main` (uncommitted edits included), and a table of files with their uncovered lines.
+  Run `git fetch` first so `origin/main` is current.
+- Open `build/coverage-report/coverage-report.html` for the coloured source view; red lines
+  are not executed by any test.
+- The reports are written even when the gate fails, so you can see what is missing.
+- Every run starts from zero, so you can rerun it after adding tests.
+- Leave out `--diff-base` for the total only. `--fail-under <percent>` changes the gate for a
+  local experiment; CI always uses 90.
+- `gcovr.cfg` decides which files count (`src/` and `include/`, without `src/main.cpp`).
+  Change it only with a reason in the pull request.
+
+On a pull request, CI posts the same summary as a comment (same-repo, non-Dependabot pull
+requests) and links the HTML report from the run summary.
 
 ## Reporting security issues
 
