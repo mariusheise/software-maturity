@@ -13,13 +13,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  products:
+    name: products
+    runs-on: ubuntu-24.04
+    outputs:
+      products: ${{ steps.list.outputs.products }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install tooling
+        run: pip install -r .devcontainer/requirements.txt
+      - name: Install Conan config
+        run: scripts/conan_bootstrap.sh && conan config install-pkg .
+      - name: List the product variants from products/*.yml
+        id: list
+        run: |
+          products="$(conan maturity:list --format=json | jq -c '.products | keys')"
+          echo "Products: ${products}"
+          echo "products=${products}" >> "${GITHUB_OUTPUT}"
+
   build-test:
     name: build-test (${{ matrix.product }}, ${{ matrix.build_type }})
+    needs: products
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        product: [productA, productB]
+        product: ${{ fromJSON(needs.products.outputs.products) }}
         build_type: [Release, Debug]
     env:
       PRODUCT: ${{ matrix.product }}
@@ -74,38 +98,6 @@ jobs:
             test-report/*.json
           retention-days: 14
 
-  test-badge:
-    name: test badge
-    needs: build-test
-    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.COVERAGE_GIST_ID != '' }}
-    runs-on: ubuntu-24.04
-    environment: coverage-badge
-    permissions:
-      actions: read
-    steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          pattern: test-summary-*
-          merge-multiple: true
-          path: summaries
-      - name: Publish the test badge data to the gist
-        env:
-          GH_TOKEN: ${{ secrets.GIST_TOKEN }}
-          GIST_ID: ${{ vars.COVERAGE_GIST_ID }}
-        run: |
-          shopt -s nullglob
-          files=(summaries/*.json)
-          if [[ ${#files[@]} -eq 0 ]]; then echo "No test results" >&2; exit 1; fi
-          passed=$(jq -s 'map(.passed) | add' "${files[@]}")
-          failed=$(jq -s 'map(.failed) | add' "${files[@]}")
-          message="${passed} passed"
-          color=brightgreen
-          if [[ "${failed}" -gt 0 ]]; then message="${message}, ${failed} failed"; color=red; fi
-          printf '{"schemaVersion":1,"label":"tests","message":"%s","color":"%s"}' \
-            "${message}" "${color}" > tests-main.json
-          gh api -X PATCH "gists/${GIST_ID}" \
-            -F "files[tests-main.json][content]=@tests-main.json" >/dev/null
-
   test-comment:
     name: test comment
     needs: build-test
@@ -140,3 +132,20 @@ jobs:
           else
             gh api -X POST "repos/${GH_REPO}/issues/${PR}/comments" -F body=@test-comment.md
           fi
+
+  tests:
+    # The one required check of this workflow: products added to products/ are gated without a
+    # ruleset change. always() so a failed or skipped matrix job fails the gate instead of
+    # skipping it (a skipped required check would count as passing).
+    name: tests
+    needs: [products, build-test]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: All build-test jobs passed
+        env:
+          PRODUCTS: ${{ needs.products.result }}
+          RESULT: ${{ needs.build-test.result }}
+        run: |
+          echo "products: ${PRODUCTS}, build-test: ${RESULT}"
+          test "${PRODUCTS}" = success && test "${RESULT}" = success

@@ -20,10 +20,9 @@ release branches do not share commands, profiles or packages.
      [Static analysis](#static-analysis))
    - `python -m pytest conan-recipes/recipes/maturity-config/all/test` after changing the
      `maturity:*` commands or profiles (see [docs/conan-commands.md](docs/conan-commands.md))
-3. Open a pull request. Required checks must pass: `prek`, `build-test (productA, Release)`, `build-test (productA, Debug)`,
-   `build-test (productB, Release)`, `build-test (productB, Debug)`, `coverage (productA)`,
-   `coverage (productB)`, `conan-commands`, `secrets (betterleaks)`, `analyze (c-cpp)` and
-   `clang-tidy`.
+3. Open a pull request. Required checks must pass: `prek`, `tests`, `coverage`,
+   `conan-commands`, `secrets (betterleaks)`, `analyze (c-cpp)` and `clang-tidy`. `tests` and
+   `coverage` pass only when every product's `build-test` and `coverage` jobs pass.
 4. Code Owners review is required for paths listed in `.github/CODEOWNERS`.
    Changes to secret-scan exclusions (`.betterleaks.toml`) always need it.
 5. Pull requests are squash-merged; commits must be signed.
@@ -45,7 +44,8 @@ release branches do not share commands, profiles or packages.
 - Product variants live in `products/`. To add one, create `products/<name>.yml` with its
   `options` (the manifest keys are listed in [docs/conan-commands.md](docs/conan-commands.md);
   `conan maturity:list` validates and shows them), run `conan maturity:lock-update --product <name>`, and add a
-  `release-<name>.yml` caller (tag triggers cannot be discovered). Build one with
+  `release-<name>.yml` caller (tag triggers cannot be discovered). CI picks the new product up
+  from `maturity:list` and gates it automatically; no workflow or ruleset change is needed. Build one with
   `conan maturity:build --product productB --target linux-x86_64`. Releases are cut by pushing a tag `<product>_v<version>`
   (for example `productA_v1.0.0`); a hyphen in the version makes it a pre-release. The tag is
   the only source of the version: there is none in `conanfile.py` or `CMakeLists.txt`, and

@@ -1,7 +1,5 @@
 # Software Maturity Demonstrator
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mariusheise/software-maturity/badge)](https://scorecard.dev/viewer/?uri=github.com/mariusheise/software-maturity) [![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mariusheise/9a670b7c3e531f53dabb7e1f6012e1a3/raw/coverage-main.json)](https://github.com/mariusheise/software-maturity/actions/workflows/coverage.yml?query=branch%3Amain) [![Tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mariusheise/9a670b7c3e531f53dabb7e1f6012e1a3/raw/tests-main.json)](https://github.com/mariusheise/software-maturity/actions/workflows/tests.yml?query=branch%3Amain)
-
 ## Purpose
 
 A clean reference repository that shows how a codebase reaches a high software
@@ -21,6 +19,7 @@ later, so the practices stay language-agnostic where possible.
 | How the CI, gates, releases and secrets work  | [docs/architecture.md](docs/architecture.md)             |
 | Checklist practice-by-practice status         | [docs/maturity-checklist.md](docs/maturity-checklist.md) |
 | `maturity:*` Conan commands and their tests   | [docs/conan-commands.md](docs/conan-commands.md)         |
+| Tools and dependencies, pins and updates      | [docs/dependencies.md](docs/dependencies.md)             |
 | Workflow and standards for contributors       | [CONTRIBUTING.md](CONTRIBUTING.md)                       |
 | Reporting vulnerabilities, verifying releases | [SECURITY.md](SECURITY.md)                               |
 
@@ -78,3 +77,9 @@ A release builds, tests and covers only its own product. Its assets are the tarb
 report (`-tests.html`), the coverage report (`-coverage.html`) and a CycloneDX SBOM. All of
 them are attested; see [SECURITY.md](SECURITY.md) to verify them. Pre-releases do not move the
 "Latest" marker.
+
+GitHub marks only one release per repository as "Latest", so each product has its own list:
+[productA releases](../../releases?q=productA_v) and
+[productB releases](../../releases?q=productB_v). A product's `release.latest` in
+`products/<name>.yml` decides whether its final releases may take the marker (default: GitHub
+decides).
