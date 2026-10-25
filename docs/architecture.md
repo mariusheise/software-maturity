@@ -11,7 +11,8 @@ How the repository is wired. Pair this with [status.md](status.md).
 - Product variants are discovered from `products/`: `<name>.yml` (description and the Conan
   options for the root recipe) plus `<name>.lock` (its lockfile). A `.lock` without `.yml` is
   ignored with a warning; a `.yml` without `.lock` gets one from `conan maturity:lock-update`.
-- Conan configuration is the configuration package `maturity-config` (`package_type =
+- Conan configuration (details and command reference: [conan-commands.md](conan-commands.md)) is
+  the configuration package `maturity-config` (`package_type =
   "configuration"`), never files referenced by path. `conanconfig.yml` requests it by range,
   `conan.lock` pins version and recipe revision (`config_requires`), and
   `conan config install-pkg .` installs it (it picks up `conan.lock` automatically). It ships:
@@ -50,7 +51,8 @@ How the repository is wired. Pair this with [status.md](status.md).
 
 ## Workflows (`.github/workflows/`)
 
-- `ci.yml`: `prek`, `build-test` (Release and Debug), `coverage`, `secrets` (betterleaks),
+- `ci.yml`: `prek`, `build-test` (Release and Debug), `conan-commands` (pytest for the
+  `maturity-config` package), `coverage`, `secrets` (betterleaks),
   `coverage-comment` (sticky PR comment, same-repo non-Dependabot PRs only), `coverage-badge`
   (push to main only). CI builds the default product only.
 - `clang-tidy.yml`: runs clang-tidy, uploads SARIF to code scanning, fails on any finding.

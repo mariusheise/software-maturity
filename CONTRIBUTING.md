@@ -14,6 +14,8 @@ release branches do not share commands, profiles or packages.
    - `prek run --all-files` for formatting, secret scanning and workflow linting
    - `scripts/build.sh [Release|Debug]` to build and test
    - `scripts/coverage.sh` to enforce the line-coverage gate
+   - `python -m pytest conan-recipes/recipes/maturity-config/all/test` after changing the
+     `maturity:*` commands or profiles (see [docs/conan-commands.md](docs/conan-commands.md))
 3. Open a pull request. Required checks must pass: `prek`, `build-test`,
    `secrets (betterleaks)`, `analyze (c-cpp)` and `coverage`.
 4. Code Owners review is required for paths listed in `.github/CODEOWNERS`.

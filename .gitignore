@@ -9,3 +9,5 @@ coverage-report.html
 coverage-summary.md
 clang-tidy.log
 clang-tidy.sarif
+__pycache__/
+.pytest_cache/
