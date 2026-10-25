@@ -11,7 +11,7 @@ is the source of truth for what is done and what is open.
 | Security scanning   | CodeQL and Scorecard (#7, #9); dummy-secret test excluded on purpose (#8) |
 | Coverage            | 90% gate (#10); annotations and summary (#13); sticky PR comment, coloured HTML (#14); Pages tried, replaced by expiring artifact (#15, #16); inline annotations added, then removed (#17, #19); run-summary link (#24); gist badge on main (#23) |
 | Static analysis     | clang-tidy with SARIF to code scanning (#20); findings fail the build, required check (#26) |
-| Reproducibility     | Conan lockfile (#21); per-product lockfiles (#28); config package via `conanconfig.yml` and a local recipe index, pinned in `conan.lock`, with `maturity:*` custom commands and `products/` discovery (#31) |
+| Reproducibility     | Conan lockfile (#21); per-product lockfiles (#28); config package via `conanconfig.yml` and a local recipe index, pinned in `conan.lock`, with `maturity:*` custom commands and `products/` discovery, per-checkout Conan home via `.conanrc` (#31) |
 | Releases            | Tag-triggered release with SBOM and attestations (#12); coverage report as asset (#25); auto pre-release flag and `actions/attest` (#27); reusable workflow with per-product tags (#28) |
 | Governance docs     | SECURITY.md, CONTRIBUTING.md (#11); checklist status (#3)            |
 | Dependency updates  | Dependabot bumps for ubuntu, conan, prek (#4 to #6)                  |

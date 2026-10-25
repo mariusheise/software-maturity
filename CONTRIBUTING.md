@@ -4,6 +4,8 @@
 
 Open the repository in the devcontainer (`.devcontainer/`). It provides the
 toolchain, Conan and prek, installs the git hooks and the Conan configuration on creation.
+Conan uses a per-checkout home in `.conan2/` (set by `.conanrc`), so checkouts of different
+release branches do not share commands, profiles or packages.
 
 ## Workflow
 

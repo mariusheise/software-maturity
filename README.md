@@ -33,6 +33,7 @@ later, so the practices stay language-agnostic where possible.
 | `products/`               | Product variants: `<name>.yml` and `<name>.lock`  |
 | `conanconfig.yml`         | Conan configuration packages to install           |
 | `conan.lock`              | Pins the configuration package revision           |
+| `.conanrc`                | Per-checkout Conan home (`.conan2/`)              |
 | `conan-recipes/`          | Local recipe index standing in for a Conan remote |
 | `CMakeLists.txt`          | Build definition                                  |
 | `.pre-commit-config.yaml` | Hooks run by prek                                 |

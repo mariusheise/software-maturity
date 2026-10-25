@@ -27,6 +27,12 @@ How the repository is wired. Pair this with [status.md](status.md).
       and re-pins it in `conan.lock` and every product lock.
   - Every product lock carries the config revision too, so `maturity:install` fails
     (`check_lockfile_config`) when the Conan home has a different config installed.
+- `.conanrc` sets `conan_home=./.conan2`, so every checkout (for example one per release
+  branch) has its own Conan home: its own installed `maturity-config` version, commands,
+  profiles and package cache. Conan finds `.conanrc` from any subfolder and it takes
+  precedence over `CONAN_HOME`. Dependencies are built once per checkout. CI caches
+  `.conan2/p`; the CodeQL job rewrites `.conanrc` to `~/.conan2` so dependency sources stay
+  outside the analysed source root.
 - `conan-recipes/` is a local-recipes-index (registered as remote `maturity-recipes`) standing
   in for Artifactory. `install-pkg` never builds, so `scripts/conan_bootstrap.sh` builds the
   listed packages from the index first. A checked-in recipe that no longer matches the
