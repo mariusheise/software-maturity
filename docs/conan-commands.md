@@ -208,16 +208,48 @@ in `.devcontainer/requirements.txt` for both the devcontainer and CI. It needs `
 
 ## Products and profiles
 
-A product variant is a pair of files with the same name in `products/`:
+A product variant is a pair of files with the same name in `products/`: a **manifest**
+`<name>.yml` and its lockfile `<name>.lock`. A `.lock` without a `.yml` is ignored with a
+warning.
 
 ```yaml
 # products/productB.yml
-description: Base product plus zlib
-options:
+description: Base product plus zlib   # people only
+options:                              # Conan options of the root recipe: -o &:<key>=<value>
   product: productB
+conf: {}                              # reserved: build settings that aren't options
+targets: [linux-x86_64]               # target profiles this product supports (default: all)
+coverage:
+  fail_under: 90                      # coverage gate in percent
+release:
+  latest: null                        # GitHub "Latest" marker: null = GitHub decides
 ```
 
-A `.lock` without a `.yml` is ignored with a warning.
+Every command validates every manifest before it runs. An unknown key at any level (such as a
+typo `fail_undre`), a wrong type or an out-of-range value fails with the file, the key and the
+allowed keys. Only `description` and `options` are needed. The rest comes from `defaults.yml`,
+shipped in the config package next to the commands, and a manifest overrides it key by key.
+
+| Key | Type | Default | Used by |
+|---|---|---|---|
+| `description` | string | `""` | people, `maturity:list` |
+| `options` | map of scalars | `{}` | every command: `-o &:<key>=<value>` for the root recipe |
+| `conf` | map of scalars | `{}` | `maturity:list` (passed to the recipe in a later change) |
+| `targets` | list of target profiles | all `maturity/target/*` | `maturity:list` (checked against the profiles) |
+| `coverage.fail_under` | number 0–100 | 90 | `maturity:list` |
+| `release.latest` | `true`, `false`, `null` | `null` | `maturity:list` |
+
+### `conan maturity:list`
+
+```sh
+conan maturity:list                                  # readable summary
+conan maturity:list --format=json                    # for CI and scripts
+conan maturity:list --product productB --format=json
+```
+
+It prints the validated manifests merged over the defaults, with `targets` resolved to the
+actual profiles. JSON: `{"products": {<name>: <manifest>}, "targets": [...], "build_types": [...]}`.
+CI and scripts read product data through this command rather than parsing the YAML.
 
 Profiles live on two axes, so new variants are new files rather than combinations:
 
@@ -256,6 +288,7 @@ exported files, so the same content gives the same revision on every machine.
 | Task                          | Steps                                                                    |
 | ----------------------------- | ------------------------------------------------------------------------ |
 | Change a command or profile   | Edit the recipe, run its tests, `conan maturity:config-lock-update`; commit the recipe, `conan.lock` and `products/*.lock` |
+| See the products and their settings | `conan maturity:list` (`--format=json` for scripts) |
 | Build and test                | `conan maturity:build --product <name> --target <target> [--build-type debug]` |
 | Run clang-tidy before a PR    | `conan maturity:tidy --product productA --target linux-x86_64 [--diff-base origin/main]` |
 | Upgrade dependencies          | `conan maturity:lock-update`; commit `products/*.lock`                   |

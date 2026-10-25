@@ -1,0 +1,5 @@
+# Defaults for every product manifest (products/<name>.yml); a manifest overrides them.
+coverage:
+  fail_under: 90        # line coverage gate of maturity:coverage, in percent
+release:
+  latest: null          # GitHub "Latest" marker: null = GitHub decides, true or false = set it
