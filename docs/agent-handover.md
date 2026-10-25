@@ -3,7 +3,7 @@
 For an agent (or person) continuing this work with no prior context. Read
 [README.md](../README.md), [architecture.md](architecture.md) and [status.md](status.md) first;
 this file adds the working method, pitfalls and a concrete plan per open item.
-Written 2026-10-25 against `main` after PR #29.
+Written 2026-10-25 against `main` after PR #31.
 
 ## 1. Goal
 
@@ -16,9 +16,9 @@ around it. C, Python and Rust variants are planned.
 
 ## 2. Current state (verified at handover)
 
-- 29 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
+- 31 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
   build-test (Release), build-test (Debug), secrets (betterleaks), analyze (c-cpp), coverage,
-  clang-tidy.
+  clang-tidy, conan-commands.
 - Releases: `v0.1.0` (+ rc.1, rc.2), `productA_v0.1.0`, `productB_v0.1.0` (+ `-rc.1` each).
   Release assets are attested and verified. The `actions/attest` swap and the auto
   pre-release flag are proven by the product releases.
@@ -38,13 +38,17 @@ around it. C, Python and Rust variants are planned.
 - Files are written through the shell (`tee` with a quoted heredoc). Avoid backslash escapes
   in generated Python or YAML (they get mangled); use `chr(10)` and check `git diff`. Keep
   long edits in separate tool calls: one giant command with several heredocs failed to parse.
+- Conan setup: each checkout has its own Conan home in `.conan2/` (`.conanrc`). Run
+  `scripts/conan_bootstrap.sh` and `conan config install-pkg .` once (the devcontainer does it),
+  then use the `maturity:*` commands; see [conan-commands.md](conan-commands.md). After
+  changing the `maturity-config` recipe, run its tests and `conan maturity:config-lock-update`.
 - No GPG key in the container: tags are lightweight, commits are signed by GitHub on squash merge.
 - Commit messages end with `Co-Authored-By: Claude Code <noreply@anthropic.com>`; PR bodies
   end with the Claude Code generated line.
 
 ## 4. Rules of engagement
 
-- Branch, PR, wait for ALL 7 required checks to be `pass`, then admin-merge own PRs
+- Branch, PR, wait for ALL 8 required checks to be `pass`, then admin-merge own PRs
   (`gh pr merge N --squash --admin --delete-branch`). This is authorised for this repo only.
   Do not merge while any check is pending: read the `gh pr checks N` output for `pending`.
   This was violated once on PR #29 (docs only), so be strict.
@@ -73,7 +77,7 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
    `build-test-products`.
 3. **Real product difference.** productB adds zlib only as a placeholder. Decide with the user
    what differs (a CMake toolchain variable, an extra source file, a dependency). Regenerate
-   locks with `scripts/update_lock.sh`.
+   locks with `conan maturity:lock-update`.
 4. **CI health (checklist 25-28).** Scheduled workflow plus `scripts/ci_health.py` using
    `gh api` for runs and jobs: success rate on main, P50/P95 duration, queue time, flaky
    re-runs (`run_attempt > 1`), time to green per PR, Conan cache hit rate. Write a job
@@ -84,7 +88,7 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
    the password and stats code, Google Benchmark with trend storage, mutation testing with
    mull or dextool. Ask which the user wants first; keep each optional and non-blocking at first.
 6. **Reusable workflows and runners (checklist 2-3).** `release.yml` is already reusable.
-   Extract the shared setup (checkout, python, conan profile, cache) into a reusable workflow
+   Extract the shared setup (checkout, python, Conan config bootstrap, cache) into a reusable workflow
    or composite action; keep `permissions` explicit in callers.
 7. **Governance and access docs (checklist 22-24).** Extend CONTRIBUTING, add CODE_OF_CONDUCT,
    issue and PR templates. Needs the checklist text.
@@ -112,3 +116,7 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
   GitHub behaviour, not a bug.
 - The raw gist URL can serve stale content for minutes; use the gist API to confirm.
 - `src/main.cpp` is excluded from coverage; the gate is 90% lines.
+- `conan config install-pkg` checks every enabled remote; an unreachable conancenter can
+  fail it once. Rerun before debugging.
+- Plain `conan install .` at the root picks up the config-only `conan.lock`; use
+  `conan maturity:install`.
