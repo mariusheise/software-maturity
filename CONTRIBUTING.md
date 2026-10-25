@@ -12,7 +12,8 @@ release branches do not share commands, profiles or packages.
 1. Branch from `main`; direct pushes to `main` are blocked.
 2. Make the change and run the checks locally:
    - `prek run --all-files` for formatting, secret scanning and workflow linting
-   - `scripts/build.sh [Release|Debug]` to build and test
+   - `conan maturity:build --product productA --target linux-x86_64 [--build-type debug]` to
+     build and run the unit tests (`--skip-test` builds without them)
    - `conan maturity:coverage --product productA --target linux-x86_64 --diff-base origin/main`
      for the coverage gate (see [Coverage](#coverage))
    - `python -m pytest conan-recipes/recipes/maturity-config/all/test` after changing the
@@ -41,7 +42,7 @@ release branches do not share commands, profiles or packages.
 - Product variants live in `products/`. To add one, create `products/<name>.yml` with its
   `options`, run `conan maturity:lock-update --product <name>`, and add a
   `release-<name>.yml` caller (tag triggers cannot be discovered). Build one with
-  `PRODUCT=productB scripts/build.sh` (default `productA`). Releases are cut by pushing a tag `<product>_v<version>`
+  `conan maturity:build --product productB --target linux-x86_64`. Releases are cut by pushing a tag `<product>_v<version>`
   (for example `productA_v1.0.0`); a hyphen in the version makes it a pre-release. Each tag is handled
   by `release-<product>.yml`, which calls the shared `release.yml`. Verify assets with
   `gh attestation verify <file> --repo mariusheise/software-maturity --signer-workflow mariusheise/software-maturity/.github/workflows/release.yml`.

@@ -24,7 +24,7 @@ def lock(client, product):
 def test_commands_are_listed(client):
     client.run("-h")
     for command in ("maturity:install", "maturity:lock-update", "maturity:config-lock-update",
-                    "maturity:coverage"):
+                    "maturity:coverage", "maturity:build"):
         assert command in client.out
 
 
@@ -92,6 +92,41 @@ def test_install_fails_when_the_installed_config_differs_from_the_lock(client):
     client.save_home({"config_version.json": json.dumps({"config_version": [installed]})})
     client.run("maturity:install --product=productA --target=linux-x86_64", assert_error=True)
     assert "not in the lockfile" in client.out
+
+
+# The fixture with a build() that reports Conan's test flag.
+BUILD_CONANFILE = FIXTURE_CONANFILE + (
+    "\n    def build(self):\n"
+    "        self.output.info(f\"skip_test={self.conf.get('tools.build:skip_test')}\")\n")
+
+
+def test_build_runs_conan_build_with_lock_options_and_profiles(client):
+    client.save({"conanfile.py": BUILD_CONANFILE})
+    client.run("maturity:lock-update --product productB")
+    client.run("maturity:build --product=productB --target=linux-x86_64")
+    assert "Running: conan build " in client.out
+    assert "--lockfile=" + os.path.join(client.current_folder, "products", "productB.lock") in client.out
+    assert "-o=&:product=productB" in client.out
+    assert "-pr:h=maturity/target/linux-x86_64 -pr:h=maturity/build_type/release" in client.out
+    assert "build_type=Release" in client.out
+    assert "skip_test=None" in client.out
+    assert "tools.build:skip_test" not in client.out.split("Running: ")[1].splitlines()[0]
+
+
+def test_build_skip_test_sets_the_conan_test_flag(client):
+    client.save({"conanfile.py": BUILD_CONANFILE})
+    client.run("maturity:lock-update --product productA")
+    client.run("maturity:build --product=productA --target=linux-x86_64 --build-type=debug --skip-test")
+    assert "-c tools.build:skip_test=True" in client.out
+    assert "build_type=Debug" in client.out
+    assert "skip_test=True" in client.out
+
+
+def test_build_rejects_unknown_values_and_needs_the_lock(client):
+    client.run("maturity:build --product=nope --target=linux-x86_64", assert_error=True)
+    assert "Unknown product 'nope'" in client.out
+    client.run("maturity:build --product=productA --target=linux-x86_64", assert_error=True)
+    assert "Run 'conan maturity:lock-update --product productA'" in client.out
 
 
 def test_coverage_builds_with_the_coverage_profile_and_writes_reports(client):

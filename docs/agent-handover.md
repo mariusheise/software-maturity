@@ -3,7 +3,7 @@
 For an agent (or person) continuing this work with no prior context. Read
 [README.md](../README.md), [architecture.md](architecture.md) and [status.md](status.md) first;
 this file adds the working method, pitfalls and a concrete plan per open item.
-Written 2026-10-25 against `main` after PR #31; updated after PR #35.
+Written 2026-10-25 against `main` after PR #31; updated after PR #36.
 
 ## 1. Goal
 
@@ -16,7 +16,7 @@ around it. C, Python and Rust variants are planned.
 
 ## 2. Current state (verified at handover)
 
-- 35 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
+- 36 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
   build-test (Release), build-test (Debug), secrets (betterleaks), analyze (c-cpp), coverage,
   clang-tidy, conan-commands.
 - Releases: `v0.1.0` (+ rc.1, rc.2), `productA_v0.1.0`, `productB_v0.1.0` (+ `-rc.1` each).
@@ -70,8 +70,9 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
    on pull requests with `pull-requests: read`. Free on public repos. Add it as a required
    check in ruleset `protect-main` (id 25796571) only after it has run once, so the check
    name exists.
-2. **Build both products in CI.** Add a `product` dimension to `build-test` and clang-tidy
-   (passing `PRODUCT` to the scripts) and to `coverage` in `coverage.yml` (`--product`). This changes check names (for example
+2. **Build both products in CI.** Add a `product` dimension to `build-test`
+   (`maturity:build --product`), clang-tidy (`PRODUCT` for `clang_tidy.sh`) and `coverage` in
+   `coverage.yml` (`--product`). This changes check names (for example
    `build-test (Release, productA)`), so update the ruleset's required checks in the same
    session, otherwise PRs block. Alternative that keeps names: a separate job
    `build-test-products`.

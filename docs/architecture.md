@@ -22,6 +22,9 @@ How the repository is wired. Pair this with [status.md](status.md).
   - Custom commands in `extensions/commands/maturity/`:
     - `conan maturity:install --product P --target T [--build-type B]` runs `conan install`
       with `products/P.lock`, the product options and the stacked profiles.
+    - `conan maturity:build --product P --target T [--build-type B] [--skip-test]` runs
+      `conan build` with the same arguments (install, generate, the recipe's `build()`).
+      `--skip-test` sets Conan's `tools.build:skip_test=True`: no ctest, `BUILD_TESTING=OFF`.
     - `conan maturity:lock-update [--product P] [--target T]` regenerates product locks over all
       targets and build types and pins the installed config in them.
     - `conan maturity:config-lock-update` re-resolves `conanconfig.yml`, installs the result
@@ -48,12 +51,14 @@ How the repository is wired. Pair this with [status.md](status.md).
   `conan.lock` and the product locks stay as they are.
 - `conan install .` at the root now auto-uses the config-only `conan.lock`; use
   `conan maturity:install` instead.
-- `conanfile.py` has a standard `build()` (CMake configure, build, ctest), used by
-  `conan build` and so by `maturity:coverage`.
-- Scripts read `PRODUCT` (default `productA`) and `TARGET` (default `linux-x86_64`) and call
-  `conan maturity:install`: `conan_bootstrap.sh` (build config packages from the index),
-  `build.sh` (install, build, test), `clang_tidy.sh` (clang-tidy, SARIF output),
-  `clang_tidy_to_sarif.py`. Coverage has no script; it is `conan maturity:coverage`.
+- `conanfile.py` has a standard `build()` (CMake configure, build, `ctest --output-on-failure
+  --no-tests=error`), used by `conan build` and so by `maturity:build` and `maturity:coverage`.
+  Its `generate()` sets `BUILD_TESTING` from `tools.build:skip_test` both ways: Conan itself
+  only sets `OFF`, and a cached `OFF` would otherwise make later builds run stale test binaries.
+- Scripts: `conan_bootstrap.sh` (build config packages from the index), `clang_tidy.sh`
+  (reads `PRODUCT` and `TARGET`, calls `conan maturity:install`, writes SARIF),
+  `clang_tidy_to_sarif.py`. Building and coverage have no scripts: `ci.yml`, `codeql.yml`,
+  `release.yml` and `coverage.yml` call `conan maturity:build` and `conan maturity:coverage`.
 
 ## Workflows (`.github/workflows/`)
 

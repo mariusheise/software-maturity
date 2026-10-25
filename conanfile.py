@@ -1,5 +1,5 @@
 from conan import ConanFile
-from conan.tools.cmake import CMake, cmake_layout
+from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
 
 
 class MaturityConan(ConanFile):
@@ -8,7 +8,7 @@ class MaturityConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {"product": ["ANY"]}
     default_options = {"product": "productA"}
-    generators = "CMakeDeps", "CMakeToolchain"
+    generators = "CMakeDeps"
 
     def requirements(self):
         self.test_requires("gtest/1.14.0")
@@ -18,8 +18,16 @@ class MaturityConan(ConanFile):
     def layout(self):
         cmake_layout(self)
 
+    def generate(self):
+        tc = CMakeToolchain(self)
+        # Conan only sets BUILD_TESTING=OFF for tools.build:skip_test; set it both ways so an OFF
+        # cached by a skip-test build does not leave later builds without (rebuilt) tests.
+        skip_test = self.conf.get("tools.build:skip_test", default=False, check_type=bool)
+        tc.cache_variables["BUILD_TESTING"] = "OFF" if skip_test else "ON"
+        tc.generate()
+
     def build(self):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
-        cmake.ctest(cli_args=["--output-on-failure"])
+        cmake.ctest(cli_args=["--output-on-failure", "--no-tests=error"])

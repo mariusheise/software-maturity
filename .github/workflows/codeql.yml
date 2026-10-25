@@ -36,7 +36,7 @@ jobs:
           languages: c-cpp
           build-mode: manual
       - name: Build
-        run: scripts/build.sh Release
+        run: conan maturity:build --product productA --target linux-x86_64
       - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           category: "/language:c-cpp"

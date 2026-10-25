@@ -1,7 +1,7 @@
 # Conan custom commands (`maturity:*`)
 
-The `maturity:*` commands wrap the Conan calls this project needs: installing a product variant
-for a target and build type, keeping the lockfiles current, and the coverage run. They ship inside the
+The `maturity:*` commands wrap the Conan calls this project needs: installing and building a
+product variant for a target and build type, keeping the lockfiles current, and the coverage run. They ship inside the
 configuration package `maturity-config`, together with the profiles they use, and are tested
 next to the recipe. See [architecture.md](architecture.md) for how this fits into the build.
 
@@ -64,8 +64,39 @@ It runs `conan install` with:
 - build profiles `maturity/target/linux-x86_64` and `maturity/build_type/release` (the build machine)
 
 It prints the full command line. Unknown products, targets or build types fail with the
-available choices. A missing lockfile fails with a hint to run `lock-update`. `scripts/build.sh`
-and `clang_tidy.sh` call this command, reading `PRODUCT` and `TARGET` from the environment.
+available choices. A missing lockfile fails with a hint to run `lock-update`. `clang_tidy.sh`
+calls this command, reading `PRODUCT` and `TARGET` from the environment.
+
+### `conan maturity:build`
+
+```sh
+conan maturity:build --product productA --target linux-x86_64                    # Release, tests
+conan maturity:build --product productA --target linux-x86_64 --build-type debug
+conan maturity:build --product productB --target linux-x86_64 --skip-test        # no tests
+```
+
+| Option         | Default   | Meaning                                                     |
+| -------------- | --------- | ----------------------------------------------------------- |
+| `--product`    | required  | A variant from `products/`                                  |
+| `--target`     | required  | A profile under `maturity/target/`                          |
+| `--build-type` | `release` | A profile under `maturity/build_type/`                      |
+| `--skip-test`  | off       | Build without the unit tests                                |
+| `--build`      | `missing` | Passed through as Conan's `--build` policy                  |
+
+This is the canonical `conan build`: install, generate and the recipe's `build()` (CMake
+configure, build, then `ctest --output-on-failure --no-tests=error`), with the same lockfile,
+options and profiles as `maturity:install` (the shared helper `graph_args` in `_maturity.py`
+composes them for `install`, `build` and `coverage`). The output lands in `build/<Build type>/`,
+for example `build/Release/maturity_app`.
+
+`--skip-test` passes Conan's own test switch, `-c tools.build:skip_test=True`. `CMake.ctest()`
+then does nothing, and `BUILD_TESTING` is `OFF`, so `CMakeLists.txt` neither builds the test
+executable nor looks for gtest. gtest is still resolved from the lockfile, which keeps the lock
+valid. The recipe's `generate()` sets `BUILD_TESTING` to `ON` again for a build without the
+flag. Conan alone only ever sets `OFF`, and a cached `OFF` would make the next build run the old
+test binary without rebuilding it.
+
+CI (`build-test`), CodeQL and releases run this command with tests.
 
 ### `conan maturity:lock-update`
 
@@ -171,6 +202,7 @@ exported files, so the same content gives the same revision on every machine.
 | Task                          | Steps                                                                    |
 | ----------------------------- | ------------------------------------------------------------------------ |
 | Change a command or profile   | Edit the recipe, run its tests, `conan maturity:config-lock-update`; commit the recipe, `conan.lock` and `products/*.lock` |
+| Build and test                | `conan maturity:build --product <name> --target <target> [--build-type debug]` |
 | Upgrade dependencies          | `conan maturity:lock-update`; commit `products/*.lock`                   |
 | Check coverage before a PR    | `conan maturity:coverage --product productA --target linux-x86_64 --diff-base origin/main`; open `build/coverage-report/coverage-report.html` |
 | Add a product variant         | Add `products/<name>.yml`, run `conan maturity:lock-update --product <name>`, add a `release-<name>.yml` caller workflow (tag triggers cannot be discovered) |
