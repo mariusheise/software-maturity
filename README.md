@@ -19,6 +19,7 @@ later, so the practices stay language-agnostic where possible.
 | How the CI, gates, releases and secrets work  | [docs/architecture.md](docs/architecture.md)             |
 | Checklist practice-by-practice status         | [docs/maturity-checklist.md](docs/maturity-checklist.md) |
 | `maturity:*` Conan commands and their tests   | [docs/conan-commands.md](docs/conan-commands.md)         |
+| Tools and dependencies, pins and updates      | [docs/dependencies.md](docs/dependencies.md)             |
 | Workflow and standards for contributors       | [CONTRIBUTING.md](CONTRIBUTING.md)                       |
 | Reporting vulnerabilities, verifying releases | [SECURITY.md](SECURITY.md)                               |
 

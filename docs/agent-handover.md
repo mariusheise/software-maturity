@@ -33,7 +33,8 @@ around it. C, Python and Rust variants are planned.
   host shell the container is reached through WSL, for example:
   `wsl.exe -e docker exec -i -w /workspaces/SoftwareMaturity <container-id> <cmd>`.
   The container id changes; find it with `wsl.exe -e docker ps`. Set `MSYS_NO_PATHCONV=1`.
-- `gh`, `jq`, clang-tidy and gcovr exist only in the container. Run the gates locally exactly
+- `gh`, `jq`, clang-tidy and gcovr exist only in the container (full list with pins:
+  [dependencies.md](dependencies.md); `jq` arrives with the rebuild after #45). Run the gates locally exactly
   as CI does: `conan maturity:coverage` and `conan maturity:tidy` (both
   `--product productA --target linux-x86_64`). `/opt/venv` belongs to root: after changing
   `.devcontainer/requirements.txt`, rebuild the container rather than `pip install`.
@@ -59,8 +60,8 @@ around it. C, Python and Rust variants are planned.
   This was violated once on PR #29 (docs only), so be strict.
 - Run `prek run --all-files` before committing. New scripts need `git add --chmod=+x`. Files
   must end with a newline (end-of-file-fixer aborts the commit; restage and recommit).
-- Never print or store tokens. `GIST_TOKEN` exists only as an environment secret in
-  `coverage-badge`.
+- Never print or store tokens. The repo holds no secrets of its own (`GIST_TOKEN` was
+  deleted with the badges).
 - Ask before pushing release tags: each tag publishes a public release. The tag is the version;
   there is nothing to bump in the repo. Use a hyphenated
   version (pre-release) for tests; a final release takes over the "Latest" marker.
@@ -101,8 +102,9 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
    devcontainer Dockerfile could be linted with hadolint).
 9. **Private-safe badges.** Build the design in `architecture.md` ("Badges (planned, not
    built)"): `conan maturity:badge`, SVGs on an orphan `badges` branch, relative README
-   paths. Then ask the owner before deleting the unused gist, `COVERAGE_GIST_ID`, the
-   `coverage-badge` environment and `GIST_TOKEN`. For release branches, add per-branch SVGs.
+   paths. Then ask the owner before deleting the leftover gist and the empty
+   `coverage-badge` environment (`COVERAGE_GIST_ID` and `GIST_TOKEN` are already gone). For
+   release branches, add per-branch SVGs.
 10. **Latest marker policy.** Each manifest's `release.latest` (`true`, `false` or `null`)
     drives `gh release create` (#45); both products use `null` (GitHub decides). Only one
     release per repository can be Latest; per-product lists are linked from the README.

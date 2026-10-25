@@ -126,10 +126,10 @@ How the repository is wired. Pair this with [status.md](status.md).
   conan-commands, secrets (betterleaks), analyze (c-cpp), clang-tidy. `tests` and `coverage`
   are the gate jobs, so the list doesn't change when products are added.
   Repo admin may bypass via PR (own PRs are admin-merged after CI passes). Squash-merge only.
-- **Unused, pending deletion (ask the owner first):** the gist that held the badge data
-  (`coverage-main.json`, `tests-main.json`), the repo variable `COVERAGE_GIST_ID`, and the
-  environment `coverage-badge` with its secret `GIST_TOKEN`. No workflow uses them since the
-  badges were dropped (see "Badges (planned)").
+- **Leftovers of the dropped badges (ask the owner before deleting):** the gist that held the
+  badge data (`coverage-main.json`, `tests-main.json`; readable by anyone with its URL) and the
+  now empty environment `coverage-badge`. The repo variable `COVERAGE_GIST_ID` and the secret
+  `GIST_TOKEN` are already deleted. No workflow uses any of them (see "Badges (planned)").
 - Dependabot is configured (`.github/dependabot.yml`).
 
 ## Badges (planned, not built)
@@ -159,7 +159,7 @@ The planned design keeps everything inside GitHub:
    of a private repository see them and nobody else does. Release badges link to
    `../../releases?q=<product>_v`.
 
-When this is built, delete the unused gist, variable, environment and secret listed above.
+When this is built, delete the leftover gist and environment listed above.
 
 ## CI hygiene rules
 
@@ -170,7 +170,8 @@ caller workflows (`.github/zizmor.yml`). Coverage is gated at 90% lines; `src/ma
 ## Working environment notes
 
 - Develop inside the devcontainer; `gh`, `jq`, gcovr and the pinned clang-tidy are available
-  there, not necessarily on the host. After a change to `.devcontainer/requirements.txt`,
+  there, not necessarily on the host. Every tool, its pin and what updates it:
+  [dependencies.md](dependencies.md). After a change to `.devcontainer/requirements.txt`,
   rebuild the container: `/opt/venv` belongs to root, so `pip install` fails without it.
 - Claude Code keeps its state in the Docker volume `software-maturity-claude`, mounted at
   `~/.claude` with `CLAUDE_CONFIG_DIR` pointing there. Sessions, memory, settings

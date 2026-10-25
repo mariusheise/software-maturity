@@ -48,8 +48,8 @@ work for private repositories). A private-safe design is planned in
 8. Measurement and improvement loop (checklist 25 to 28).
 9. Private-safe badges (coverage, tests, release version per product) on an orphan `badges`
    branch, as designed in [architecture.md](architecture.md#badges-planned-not-built). Then,
-   with the owner's go-ahead, delete the unused gist, `COVERAGE_GIST_ID`, the `coverage-badge`
-   environment and `GIST_TOKEN`.
+   with the owner's go-ahead, delete the leftover gist and the empty `coverage-badge`
+   environment (`COVERAGE_GIST_ID` and `GIST_TOKEN` are already gone).
 10. "Latest" marker: the mechanism exists (`release.latest` in each manifest, #45); both
     products use the default (GitHub decides). Decide a policy when a final release is due.
 11. Add C, Python and Rust variants.
@@ -59,5 +59,5 @@ work for private repositories). A private-safe design is planned in
 - Work on a branch, open a PR, wait for the 7 required checks, then admin-merge own PRs
   (authorised for this repo only).
 - Run `prek run --all-files` before committing; new scripts need `git add --chmod=+x`.
-- Never paste tokens in chat; `GIST_TOKEN` lives only in the `coverage-badge` environment.
+- Never paste tokens in chat. The repo currently holds no secrets of its own.
 - Do not push release tags without asking; each tag publishes a public release.
