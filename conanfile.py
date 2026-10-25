@@ -6,10 +6,14 @@ class MaturityConan(ConanFile):
     name = "maturity"
     version = "0.1.0"
     settings = "os", "compiler", "build_type", "arch"
+    options = {"product": ["productA", "productB"]}
+    default_options = {"product": "productA"}
     generators = "CMakeDeps", "CMakeToolchain"
 
     def requirements(self):
         self.test_requires("gtest/1.14.0")
+        if self.options.product == "productB":
+            self.requires("zlib/1.3.1")
 
     def layout(self):
         cmake_layout(self)
