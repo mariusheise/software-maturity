@@ -23,5 +23,3 @@ TEST(Mean, MultipleValues) {
   ASSERT_TRUE(m.has_value());
   EXPECT_DOUBLE_EQ(*m, 2.5);
 }
-
-TEST(GateProbe, FailsOnPurpose) { EXPECT_EQ(1, 2) << "throwaway: proves the CI gates fail"; }
