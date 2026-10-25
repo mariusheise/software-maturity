@@ -17,20 +17,93 @@ def add_path_argument(parser):
                         help="Repository root with conanfile.py and products/ (default: .)")
 
 
+# The sections a products/<name>.yml may have. Values: a nested schema (dict) or a check that
+# returns an error message for a wrong value (None when fine).
+def _scalar_map(value):
+    if not isinstance(value, dict):
+        return "must be a mapping"
+    for key, item in value.items():
+        if not isinstance(item, (str, int, float, bool)):
+            return {key: "must be a string, number or boolean"}
+    return None
+
+
+MANIFEST_SCHEMA = {
+    "description": lambda v: None if isinstance(v, str) else "must be a string",
+    "options": _scalar_map,
+    "conf": _scalar_map,
+    "targets": lambda v: (None if v is None or (isinstance(v, list)
+                                                and all(isinstance(t, str) for t in v))
+                          else "must be a list of strings"),
+    "coverage": {
+        "fail_under": lambda v: (None if isinstance(v, (int, float)) and not isinstance(v, bool)
+                                 and 0 <= v <= 100 else "must be a number from 0 to 100"),
+    },
+    "release": {
+        "latest": lambda v: None if v is None or isinstance(v, bool)
+        else "must be true, false or null",
+    },
+}
+# Org-wide defaults shipped with the commands; a product manifest overrides them.
+DEFAULTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "defaults.yml")
+
+
+def _validate(data, schema, source, prefix=""):
+    if not isinstance(data, dict):
+        raise ConanException(f"{source}: {f'{prefix[:-1]!r} ' if prefix else ''}must be a mapping")
+    for key, value in data.items():
+        path = f"{prefix}{key}"
+        if key not in schema:
+            raise ConanException(f"{source}: unknown key {path!r}. "
+                                 f"Allowed: {', '.join(sorted(schema))}")
+        check = schema[key]
+        if isinstance(check, dict):
+            _validate(value, check, source, f"{path}.")
+            continue
+        error = check(value)
+        if isinstance(error, dict):  # an error about one entry of a mapping
+            (item, message), = error.items()
+            raise ConanException(f"{source}: '{path}.{item}' {message}")
+        if error:
+            raise ConanException(f"{source}: {path!r} {error}")
+
+
+def _merge(defaults, data):
+    merged = dict(defaults)
+    for key, value in data.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict) and key not in (
+                "options", "conf"):
+            merged[key] = _merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def load_defaults():
+    with open(DEFAULTS_FILE, encoding="utf-8") as f:
+        defaults = yaml.safe_load(f) or {}
+    _validate(defaults, MANIFEST_SCHEMA, os.path.basename(DEFAULTS_FILE))
+    return defaults
+
+
 def discover_products(root):
-    """Map each product variant in <root>/products/ to its settings (.yml) and lockfile (.lock)."""
+    """Map each product variant in <root>/products/ to its validated manifest (<name>.yml,
+    merged over the shipped defaults) plus its lockfile path (<name>.lock)."""
     folder = os.path.join(root, PRODUCTS_DIR)
     if not os.path.isdir(folder):
         raise ConanException(f"No '{PRODUCTS_DIR}' folder in {root}")
     entries = os.listdir(folder)
+    base = {"description": "", "options": {}, "conf": {}, "targets": None, **load_defaults()}
     products = {}
     for entry in sorted(entries):
         name, ext = os.path.splitext(entry)
         if ext != ".yml":
             continue
         with open(os.path.join(folder, entry), encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-        products[name] = {"options": data.get("options") or {},
+            data = yaml.safe_load(f)
+        data = {} if data is None else data
+        _validate(data, MANIFEST_SCHEMA, f"{PRODUCTS_DIR}/{entry}")
+        products[name] = {**_merge(base, data), "name": name,
                           "lock": os.path.join(folder, f"{name}.lock")}
     for entry in sorted(entries):
         name, ext = os.path.splitext(entry)
@@ -39,6 +112,18 @@ def discover_products(root):
     if not products:
         raise ConanException(f"No product variants (*.yml) in {folder}")
     return products
+
+
+def product_targets(conan_api, product):
+    """Target profiles a product supports: its 'targets' list, or every maturity/target/*."""
+    available = profile_values(conan_api, "target")
+    if product["targets"] is None:
+        return available
+    for target in product["targets"]:
+        if target not in available:
+            raise ConanException(f"{PRODUCTS_DIR}/{product['name']}.yml lists unknown target "
+                                 f"'{target}'. Available: {', '.join(available) or 'none'}")
+    return list(product["targets"])
 
 
 def profile_values(conan_api, axis):

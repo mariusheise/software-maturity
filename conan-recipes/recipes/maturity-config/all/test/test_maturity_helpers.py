@@ -103,3 +103,46 @@ def test_graph_args_errors(tmp_path, product, target, build_type, message):
     write(tmp_path, {"products/a.yml": "", "products/a.lock": "{}", "products/b.yml": ""})
     with pytest.raises(ConanException, match=message):
         _maturity.graph_args(profiles_api(), str(tmp_path), product, target, build_type)
+
+
+def test_discover_products_merges_the_shipped_defaults(tmp_path):
+    write(tmp_path, {"products/a.yml": "options:\n  product: a\n",
+                     "products/b.yml": "coverage:\n  fail_under: 85\nrelease:\n  latest: false\n"
+                                       "targets: [linux-x86_64]\nconf:\n  log_level: debug\n"})
+    products = _maturity.discover_products(str(tmp_path))
+    a, b = products["a"], products["b"]
+    assert a["name"] == "a"
+    assert a["coverage"] == {"fail_under": 90} and a["release"] == {"latest": None}
+    assert a["targets"] is None and a["conf"] == {} and a["description"] == ""
+    assert b["coverage"] == {"fail_under": 85} and b["release"] == {"latest": False}
+    assert b["targets"] == ["linux-x86_64"] and b["conf"] == {"log_level": "debug"}
+
+
+@pytest.mark.parametrize("content, message", [
+    ("colour: red\n", "products/x.yml: unknown key 'colour'. Allowed: conf, coverage, description, "
+                      "options, release, targets"),
+    ("coverage:\n  fail_undre: 80\n", "products/x.yml: unknown key 'coverage.fail_undre'. "
+                                      "Allowed: fail_under"),
+    ("- a\n", "products/x.yml: must be a mapping"),
+    ("description: [1]\n", "'description' must be a string"),
+    ("options:\n  a: [1]\n", "'options.a' must be a string, number or boolean"),
+    ("options: 3\n", "'options' must be a mapping"),
+    ("targets: linux-x86_64\n", "'targets' must be a list of strings"),
+    ("coverage:\n  fail_under: 101\n", "'coverage.fail_under' must be a number from 0 to 100"),
+    ("coverage:\n  fail_under: true\n", "'coverage.fail_under' must be a number from 0 to 100"),
+    ("release:\n  latest: 'yes'\n", "'release.latest' must be true, false or null"),
+])
+def test_discover_products_rejects_invalid_manifests(tmp_path, content, message):
+    write(tmp_path, {"products/x.yml": content})
+    with pytest.raises(ConanException) as error:
+        _maturity.discover_products(str(tmp_path))
+    assert message in str(error.value)
+
+
+def test_product_targets_defaults_to_all_and_checks_the_list():
+    api = profiles_api()
+    assert _maturity.product_targets(api, {"name": "a", "targets": None}) == ["linux-x86_64"]
+    assert _maturity.product_targets(api, {"name": "a", "targets": ["linux-x86_64"]}) == [
+        "linux-x86_64"]
+    with pytest.raises(ConanException, match="products/a.yml lists unknown target 'win'"):
+        _maturity.product_targets(api, {"name": "a", "targets": ["win"]})

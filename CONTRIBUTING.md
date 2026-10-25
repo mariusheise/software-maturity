@@ -43,7 +43,8 @@ release branches do not share commands, profiles or packages.
   local-recipes-index that stands in for a remote. After changing it, run
   `conan maturity:config-lock-update` and commit the recipe, `conan.lock` and `products/*.lock`.
 - Product variants live in `products/`. To add one, create `products/<name>.yml` with its
-  `options`, run `conan maturity:lock-update --product <name>`, and add a
+  `options` (the manifest keys are listed in [docs/conan-commands.md](docs/conan-commands.md);
+  `conan maturity:list` validates and shows them), run `conan maturity:lock-update --product <name>`, and add a
   `release-<name>.yml` caller (tag triggers cannot be discovered). Build one with
   `conan maturity:build --product productB --target linux-x86_64`. Releases are cut by pushing a tag `<product>_v<version>`
   (for example `productA_v1.0.0`); a hyphen in the version makes it a pre-release. The tag is

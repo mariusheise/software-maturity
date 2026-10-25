@@ -25,7 +25,7 @@ def lock(client, product):
 def test_commands_are_listed(client):
     client.run("-h")
     for command in ("maturity:install", "maturity:lock-update", "maturity:config-lock-update",
-                    "maturity:coverage", "maturity:build", "maturity:tidy"):
+                    "maturity:coverage", "maturity:build", "maturity:tidy", "maturity:list"):
         assert command in client.out
 
 
@@ -337,3 +337,33 @@ def test_tidy_needs_clang_tidy_and_the_lock(client, monkeypatch):
     monkeypatch.setenv("PATH", "")
     client.run("maturity:tidy --product=productA --target=linux-x86_64", assert_error=True)
     assert "clang-tidy not found" in client.out
+
+
+def test_list_prints_the_products(client):
+    client.save({"products/productB.yml": "description: B with zlib\noptions:\n  product: productB\n"
+                                          "coverage:\n  fail_under: 85\n"})
+    client.run("maturity:list")
+    assert "productA" in client.out and "productB" in client.out
+    assert "B with zlib" in client.out
+    assert "linux-x86_64" in client.out
+
+
+def test_list_json_has_the_merged_manifests(client):
+    client.save({"products/productB.yml": "options:\n  product: productB\ncoverage:\n  fail_under: 85\n"})
+    client.run("maturity:list --format=json")
+    data = json.loads(client.stdout)
+    assert sorted(data["products"]) == ["productA", "productB"]
+    b = data["products"]["productB"]
+    assert b["options"] == {"product": "productB"}
+    assert b["coverage"] == {"fail_under": 85} and b["release"] == {"latest": None}
+    assert b["targets"] == ["linux-x86_64"]
+    assert data["targets"] == ["linux-x86_64"] and data["build_types"] == ["debug", "release"]
+    client.run("maturity:list --product productA --format=json")
+    assert list(json.loads(client.stdout)["products"]) == ["productA"]
+
+
+def test_list_rejects_a_broken_manifest(client):
+    client.save({"products/productB.yml": "options:\n  product: productB\ncolour: red\n"})
+    client.run("maturity:list", assert_error=True)
+    assert "products/productB.yml: unknown key 'colour'" in client.out
+    client.run("maturity:list --product nope", assert_error=True)

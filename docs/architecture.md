@@ -8,9 +8,13 @@ How the repository is wired. Pair this with [status.md](status.md).
   (`-Wall -Wextra -Wpedantic -Werror`).
 - `conanfile.py` has the option `product` (any value, default `productA`). productB adds
   zlib purely so the two lockfiles differ; replace with real product differences.
-- Product variants are discovered from `products/`: `<name>.yml` (description and the Conan
-  options for the root recipe) plus `<name>.lock` (its lockfile). A `.lock` without `.yml` is
-  ignored with a warning; a `.yml` without `.lock` gets one from `conan maturity:lock-update`.
+- Product variants are discovered from `products/`: `<name>.yml`, the product **manifest**,
+  plus `<name>.lock` (its lockfile). A `.lock` without `.yml` is ignored with a warning; a `.yml`
+  without `.lock` gets one from `conan maturity:lock-update`. The manifest has one section per
+  consumer (`options` for the root recipe; `conf`, `targets`, `coverage`, `release` for the
+  commands and CI). Every command validates it against a schema in `_maturity.py` (unknown keys
+  fail) and merges it over `defaults.yml`, shipped in the config package. `conan maturity:list`
+  prints the result, also as JSON for CI.
 - Conan configuration (details and command reference: [conan-commands.md](conan-commands.md)) is
   the configuration package `maturity-config` (`package_type =
   "configuration"`), never files referenced by path. `conanconfig.yml` requests it by range,
