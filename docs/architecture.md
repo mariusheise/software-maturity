@@ -14,7 +14,9 @@ How the repository is wired. Pair this with [status.md](status.md).
   consumer (`options` for the root recipe; `conf`, `targets`, `coverage`, `release` for the
   commands and CI). Every command validates it against a schema in `_maturity.py` (unknown keys
   fail) and merges it over `defaults.yml`, shipped in the config package. `conan maturity:list`
-  prints the result, also as JSON for CI.
+  prints the result, also as JSON for CI. `conf` entries reach the root recipe as
+  `user.maturity.product:<key>`; `targets` limits what `lock-update` locks and which `--target`
+  the commands accept; `coverage.fail_under` is the default gate of `maturity:coverage`.
 - Conan configuration (details and command reference: [conan-commands.md](conan-commands.md)) is
   the configuration package `maturity-config` (`package_type =
   "configuration"`), never files referenced by path. `conanconfig.yml` requests it by range,

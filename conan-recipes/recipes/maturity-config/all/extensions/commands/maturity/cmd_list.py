@@ -37,7 +37,7 @@ def list(conan_api, parser, *args):  # noqa: A001 (the command is named after th
         products = {args.product: products[args.product]}
     listed = {}
     for name, product in products.items():
-        manifest = {k: v for k, v in product.items() if k not in ("name", "lock")}
+        manifest = {k: v for k, v in product.items() if k not in ("name", "lock", "manifest")}
         manifest["targets"] = product_targets(conan_api, product)
         listed[name] = manifest
     return {"products": listed, "targets": profile_values(conan_api, "target"),

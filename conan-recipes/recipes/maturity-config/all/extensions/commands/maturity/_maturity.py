@@ -103,7 +103,7 @@ def discover_products(root):
             data = yaml.safe_load(f)
         data = {} if data is None else data
         _validate(data, MANIFEST_SCHEMA, f"{PRODUCTS_DIR}/{entry}")
-        products[name] = {**_merge(base, data), "name": name,
+        products[name] = {**_merge(base, data), "name": name, "manifest": data,
                           "lock": os.path.join(folder, f"{name}.lock")}
     for entry in sorted(entries):
         name, ext = os.path.splitext(entry)
@@ -142,6 +142,12 @@ def option_args(product):
     return [f"-o=&:{key}={value}" for key, value in product["options"].items()]
 
 
+def conf_args(product):
+    """The manifest's conf section for the root recipe, as user.maturity.product:<key>."""
+    return [arg for key, value in product["conf"].items()
+            for arg in ("-c", f"user.maturity.product:{key}={value}")]
+
+
 def profile_args(target, build_type):
     return [f"-pr:h=maturity/target/{target}", f"-pr:h=maturity/build_type/{build_type}",
             f"-pr:b=maturity/target/{BUILD_TARGET}", "-pr:b=maturity/build_type/release"]
@@ -151,13 +157,13 @@ def graph_args(conan_api, root, product, target, build_type):
     """Root, lockfile, options and profiles of a product variant for 'conan install/build'."""
     products = discover_products(root)
     check_choice("product", product, list(products))
-    check_choice("target", target, profile_values(conan_api, "target"))
-    check_choice("build type", build_type, profile_values(conan_api, "build_type"))
     variant = products[product]
+    check_choice("target", target, product_targets(conan_api, variant))
+    check_choice("build type", build_type, profile_values(conan_api, "build_type"))
     if not os.path.isfile(variant["lock"]):
         raise ConanException(f"Missing lockfile for {product}. "
                              f"Run 'conan maturity:lock-update --product {product}'")
-    return [root, f"--lockfile={variant['lock']}", *option_args(variant),
+    return [root, f"--lockfile={variant['lock']}", *option_args(variant), *conf_args(variant),
             *profile_args(target, build_type)]
 
 

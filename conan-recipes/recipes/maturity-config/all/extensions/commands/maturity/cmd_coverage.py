@@ -8,7 +8,7 @@ from conan.cli.command import conan_command
 from conan.errors import ConanException
 
 from _coverage import write_summary
-from _maturity import add_path_argument, graph_args, run
+from _maturity import add_path_argument, discover_products, graph_args, run
 from _tests import run_with_report
 
 # Set by the maturity/coverage profile (build_folder_vars=["const.coverage"]).
@@ -25,8 +25,9 @@ def coverage(conan_api, parser, *args):
     add_path_argument(parser)
     parser.add_argument("--product", required=True, help="Product variant from products/")
     parser.add_argument("--target", required=True, help="Target profile, e.g. linux-x86_64")
-    parser.add_argument("--fail-under", type=float, default=90.0,
-                        help="Minimum line coverage in percent (default: 90)")
+    parser.add_argument("--fail-under", type=float,
+                        help="Minimum line coverage in percent (default: the product's "
+                             "coverage.fail_under, 90 unless the manifest sets it)")
     parser.add_argument("--diff-base", help="Also report coverage of the lines changed since the "
                                             "merge base with this revision, e.g. origin/main")
     parser.add_argument("--build", default="missing", help="Conan --build policy (default: missing)")
@@ -34,6 +35,14 @@ def coverage(conan_api, parser, *args):
 
     root = os.path.abspath(args.path)
     build_args = graph_args(conan_api, root, args.product, args.target, "debug")
+    product = discover_products(root)[args.product]
+    if args.fail_under is not None:
+        fail_under, gate_source = args.fail_under, "--fail-under"
+    else:
+        fail_under = product["coverage"]["fail_under"]
+        gate_source = (f"products/{args.product}.yml"
+                       if "fail_under" in product["manifest"].get("coverage", {})
+                       else "defaults.yml")
     gcovr = shutil.which("gcovr")
     if not gcovr:
         raise ConanException("gcovr not found. Install it, e.g. "
@@ -69,6 +78,7 @@ def coverage(conan_api, parser, *args):
                               args.diff_base)
     ConanOutput().info(text)
     ConanOutput().info(f"Report: file://{html_path}")
-    if pct < args.fail_under:
-        raise ConanException(f"Line coverage {pct:.1f}% is below the gate of {args.fail_under:g}%")
-    ConanOutput().success(f"Line coverage {pct:.1f}% meets the gate of {args.fail_under:g}%")
+    gate = f"{fail_under:g}% ({gate_source})"
+    if pct < fail_under:
+        raise ConanException(f"Line coverage {pct:.1f}% is below the gate of {gate}")
+    ConanOutput().success(f"Line coverage {pct:.1f}% meets the gate of {gate}")
