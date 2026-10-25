@@ -70,7 +70,7 @@ jobs:
           subject-path: |
             dist/*.tar.gz
             dist/*-coverage.html
-      - uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: dist/*.tar.gz
           sbom-path: dist/maturity-${{ github.ref_name }}.cdx.json
@@ -79,4 +79,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
-        run: gh release create "${TAG}" dist/* --verify-tag --generate-notes
+        run: |
+          flags=()
+          if [[ "${TAG}" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "${TAG}" dist/* --verify-tag --generate-notes "${flags[@]}"
