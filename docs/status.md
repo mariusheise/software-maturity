@@ -1,6 +1,6 @@
 # Status and handover
 
-Last updated 2026-10-25. The repo has no GitHub issues; work was tracked as PRs. This file
+Last updated 2026-10-25. Working method and per-item plans: [agent-handover.md](agent-handover.md). The repo has no GitHub issues; work was tracked as PRs. This file
 is the source of truth for what is done and what is open.
 
 ## Done (PR numbers)
