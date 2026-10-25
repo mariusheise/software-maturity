@@ -1,0 +1,142 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: build-test (${{ matrix.product }}, ${{ matrix.build_type }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        product: [productA, productB]
+        build_type: [Release, Debug]
+    env:
+      PRODUCT: ${{ matrix.product }}
+      BUILD_TYPE: ${{ matrix.build_type }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install tooling
+        run: pip install -r .devcontainer/requirements.txt
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .conan2/p
+          key: conan-${{ runner.os }}-${{ matrix.product }}-${{ matrix.build_type }}-${{ hashFiles('conanfile.py', 'products/*', 'conan.lock', 'conanconfig.yml', 'conan-recipes/**') }}
+      - name: Install Conan config
+        run: scripts/conan_bootstrap.sh && conan config install-pkg .
+      - name: Build, test and write the test report
+        run: conan maturity:build --product "${PRODUCT}" --target linux-x86_64 --build-type "${BUILD_TYPE,,}"
+      - name: Stage the test report under a unique name
+        if: ${{ !cancelled() }}
+        run: |
+          stem="build/test-report/${PRODUCT}-${BUILD_TYPE,,}"
+          if [[ ! -f "${stem}.html" ]]; then exit 0; fi
+          mkdir -p test-report
+          cp "${stem}.html" "test-report/tests-${PRODUCT}-${BUILD_TYPE}.html"
+          cp "${stem}.md" "test-report/tests-${PRODUCT}-${BUILD_TYPE}.md"
+          cp "${stem}.json" "test-report/tests-${PRODUCT}-${BUILD_TYPE}.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        id: report
+        if: ${{ !cancelled() && hashFiles('test-report/*.html') != '' }}
+        with:
+          path: test-report/tests-${{ matrix.product }}-${{ matrix.build_type }}.html
+          archive: false
+          retention-days: 14
+      - name: Link the test report in the run summary and the comment
+        if: ${{ !cancelled() && steps.report.outputs.artifact-url != '' }}
+        env:
+          REPORT_URL: ${{ steps.report.outputs.artifact-url }}
+        run: |
+          link="Sortable test report (one HTML file, sign in to GitHub to open it; expires after 14 days): [tests-${PRODUCT}-${BUILD_TYPE}.html](${REPORT_URL})"
+          printf '\n%s\n' "${link}" >> "${GITHUB_STEP_SUMMARY}"
+          printf '%s\n' "${link}" >> "test-report/tests-${PRODUCT}-${BUILD_TYPE}.md"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() && hashFiles('test-report/*.json') != '' }}
+        with:
+          name: test-summary-${{ matrix.product }}-${{ matrix.build_type }}
+          path: |
+            test-report/*.md
+            test-report/*.json
+          retention-days: 14
+
+  test-badge:
+    name: test badge
+    needs: build-test
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.COVERAGE_GIST_ID != '' }}
+    runs-on: ubuntu-24.04
+    environment: coverage-badge
+    permissions:
+      actions: read
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: test-summary-*
+          merge-multiple: true
+          path: summaries
+      - name: Publish the test badge data to the gist
+        env:
+          GH_TOKEN: ${{ secrets.GIST_TOKEN }}
+          GIST_ID: ${{ vars.COVERAGE_GIST_ID }}
+        run: |
+          shopt -s nullglob
+          files=(summaries/*.json)
+          if [[ ${#files[@]} -eq 0 ]]; then echo "No test results" >&2; exit 1; fi
+          passed=$(jq -s 'map(.passed) | add' "${files[@]}")
+          failed=$(jq -s 'map(.failed) | add' "${files[@]}")
+          message="${passed} passed"
+          color=brightgreen
+          if [[ "${failed}" -gt 0 ]]; then message="${message}, ${failed} failed"; color=red; fi
+          printf '{"schemaVersion":1,"label":"tests","message":"%s","color":"%s"}' \
+            "${message}" "${color}" > tests-main.json
+          gh api -X PATCH "gists/${GIST_ID}" \
+            -F "files[tests-main.json][content]=@tests-main.json" >/dev/null
+
+  test-comment:
+    name: test comment
+    needs: build-test
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: test-summary-*
+          merge-multiple: true
+          path: summaries
+      - name: Create or update the test comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          shopt -s nullglob
+          {
+            echo "<!-- test-comment -->"
+            echo "## Tests"
+            echo
+            for summary in summaries/*.md; do cat "${summary}"; echo; done
+          } > test-comment.md
+          id=$(gh api --paginate "repos/${GH_REPO}/issues/${PR}/comments" \
+            --jq '.[] | select(.body | startswith("<!-- test-comment -->")) | .id' | head -n1)
+          if [ -n "${id}" ]; then
+            gh api -X PATCH "repos/${GH_REPO}/issues/comments/${id}" -F body=@test-comment.md
+          else
+            gh api -X POST "repos/${GH_REPO}/issues/${PR}/comments" -F body=@test-comment.md
+          fi

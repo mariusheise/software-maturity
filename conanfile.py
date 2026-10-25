@@ -31,4 +31,8 @@ class MaturityConan(ConanFile):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
-        cmake.ctest(cli_args=["--output-on-failure", "--no-tests=error"])
+        args = ["--output-on-failure", "--no-tests=error"]
+        # Set by conan maturity:build and maturity:coverage, which turn it into a test report.
+        if junit := self.conf.get("user.maturity:junit"):
+            args += ["--output-junit", f'"{junit}"']
+        cmake.ctest(cli_args=args)

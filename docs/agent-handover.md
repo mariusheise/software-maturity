@@ -3,7 +3,7 @@
 For an agent (or person) continuing this work with no prior context. Read
 [README.md](../README.md), [architecture.md](architecture.md) and [status.md](status.md) first;
 this file adds the working method, pitfalls and a concrete plan per open item.
-Written 2026-10-25 against `main` after PR #31; updated after PR #40.
+Written 2026-10-25 against `main` after PR #31; updated after PR #41.
 
 ## 1. Goal
 
@@ -16,9 +16,9 @@ around it. C, Python and Rust variants are planned.
 
 ## 2. Current state (verified at handover)
 
-- 40 PRs merged or closed, no GitHub issues. Required checks on `main`: prek,
-  build-test (Release), build-test (Debug), secrets (betterleaks), analyze (c-cpp), coverage,
-  clang-tidy, conan-commands.
+- 41 PRs merged or closed, no GitHub issues. 11 required checks on `main`: prek,
+  build-test (productA|productB, Release|Debug), coverage (productA), coverage (productB),
+  secrets (betterleaks), analyze (c-cpp), clang-tidy, conan-commands.
 - Releases: `v0.1.0` (+ rc.1, rc.2), `productA_v0.1.0`, `productB_v0.1.0` (+ `-rc.1` each).
   Release assets are attested and verified. The `actions/attest` swap and the auto
   pre-release flag are proven by the product releases.
@@ -53,7 +53,7 @@ around it. C, Python and Rust variants are planned.
 
 ## 4. Rules of engagement
 
-- Branch, PR, wait for ALL 8 required checks to be `pass`, then admin-merge own PRs
+- Branch, PR, wait for ALL 11 required checks to be `pass`, then admin-merge own PRs
   (`gh pr merge N --squash --admin --delete-branch`). This is authorised for this repo only.
   Do not merge while any check is pending: read the `gh pr checks N` output for `pending`.
   This was violated once on PR #29 (docs only), so be strict.
@@ -76,12 +76,9 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
    on pull requests with `pull-requests: read`. Free on public repos. Add it as a required
    check in ruleset `protect-main` (id 25796571) only after it has run once, so the check
    name exists.
-2. **Build both products in CI.** Add a `product` dimension to `build-test`
-   (`maturity:build --product`), `clang-tidy` (`maturity:tidy --product`) and `coverage` in
-   `coverage.yml` (`--product`). This changes check names (for example
-   `build-test (Release, productA)`), so update the ruleset's required checks in the same
-   session, otherwise PRs block. Alternative that keeps names: a separate job
-   `build-test-products`.
+2. **Build both products in CI.** Done for `build-test` (`tests.yml`) and `coverage` (#41).
+   `clang-tidy` and CodeQL stay on productA. A new product means: add it to both matrices
+   and to the ruleset's required checks (the check names include the product).
 3. **Real product difference.** productB adds zlib only as a placeholder. Decide with the user
    what differs (a CMake toolchain variable, an extra source file, a dependency). Regenerate
    locks with `conan maturity:lock-update`.
@@ -124,8 +121,9 @@ Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
 - The raw gist URL can serve stale content for minutes; use the gist API to confirm.
 - `src/main.cpp` is excluded from coverage (`gcovr.cfg`); the gate is 90% lines. The coverage
   build lives in `build/coverage/Debug` (profile `maturity/coverage`), separate from `build/Debug`.
-- The coverage jobs (`coverage`, `coverage-comment`, `coverage-badge`) are in `coverage.yml`,
-  not `ci.yml`.
+- The coverage jobs are in `coverage.yml` and the test jobs (`build-test`, `test-comment`,
+  `test-badge`) in `tests.yml`, not `ci.yml`. Matrix job outputs overwrite each other; pass
+  data between jobs through artifacts.
 - `conan config install-pkg` checks every enabled remote; an unreachable conancenter can
   fail it once. Rerun before debugging.
 - Plain `conan install .` at the root picks up the config-only `conan.lock`; use

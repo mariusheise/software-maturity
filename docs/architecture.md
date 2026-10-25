@@ -76,30 +76,43 @@ How the repository is wired. Pair this with [status.md](status.md).
 
 ## Workflows (`.github/workflows/`)
 
-- `ci.yml`: `prek`, `build-test` (Release and Debug), `conan-commands` (pytest for the
-  `maturity-config` package), `secrets` (betterleaks). CI builds the default product only.
-- `coverage.yml`: `coverage` (`conan maturity:coverage`, with `--diff-base HEAD^1` on PRs for
-  the changed-lines figure), `coverage-comment` (sticky PR comment, same-repo non-Dependabot
-  PRs only), `coverage-badge` (push to main only). No `paths:` filter: `coverage` is a
-  required check.
+- `ci.yml`: `prek`, `conan-commands` (pytest for the `maturity-config` package), `secrets`
+  (betterleaks).
+- `tests.yml`: `build-test (<product>, <build type>)` for productA and productB in Release and
+  Debug (`conan maturity:build`). Each job uploads its single-file test report (14 days) and
+  links it from the run summary, plus a `test-summary-*` artifact (`.md`, `.json`).
+  `test-comment` combines them into one sticky PR comment (`<!-- test-comment -->`,
+  same-repo non-Dependabot PRs). `test-badge` sums them into `tests-main.json` in the gist
+  (push to main).
+- `coverage.yml`: `coverage (<product>)` for both products (`conan maturity:coverage`, with
+  `--diff-base HEAD^1` on PRs for the changed-lines figure). Each job uploads
+  `coverage-report-<product>.html` and a `coverage-<product>` artifact (summary, XML,
+  `tests-coverage-<product>.html`, line percent). `coverage-comment` combines both products in
+  one sticky comment; `coverage-badge` tracks **productA** (push to main).
+- Matrix job outputs overwrite each other, so the comment and badge jobs read artifacts
+  (`actions: read`). Neither `tests.yml` nor `coverage.yml` has a `paths:` filter: their jobs
+  are required checks.
 - `clang-tidy.yml`: `conan maturity:tidy` (pinned clang-tidy from `requirements.txt`), uploads
   the SARIF to code scanning, fails on any finding.
 - `codeql.yml`: CodeQL (`analyze (c-cpp)`). `scorecard.yml`: OpenSSF Scorecard.
 - `release.yml`: reusable (`workflow_call`, input `product`). `release-productA.yml` and
   `release-productB.yml` trigger on `productA_v*` / `productB_v*`, grant
   contents/id-token/attestations write, and call it. It checks the tag matches the product,
-  builds, packages, produces a coverage HTML (`maturity:coverage` for the product) and a
-  CycloneDX SBOM from the product lockfile, attests them, and creates the GitHub release (pre-release if the version has a hyphen).
+  builds, packages, produces a coverage HTML (`maturity:coverage` for the product), the test
+  report of the product (`maturity-<tag>-tests.html`) and a CycloneDX SBOM from the product
+  lockfile, attests them, and creates the GitHub release (pre-release if the version has a hyphen).
   Verify with `gh attestation verify <file> --repo mariusheise/software-maturity
   --signer-workflow mariusheise/software-maturity/.github/workflows/release.yml`.
 
 ## Repository settings (not in git)
 
 - Ruleset `protect-main` (id 25796571): default branch; no deletion, no force-push, linear
-  history, signed commits, PR required, required status checks: prek, build-test (Release),
-  build-test (Debug), secrets (betterleaks), analyze (c-cpp), coverage, clang-tidy.
+  history, signed commits, PR required, 11 required status checks: prek,
+  build-test (productA, Release), build-test (productA, Debug), build-test (productB, Release),
+  build-test (productB, Debug), coverage (productA), coverage (productB), conan-commands,
+  secrets (betterleaks), analyze (c-cpp), clang-tidy.
   Repo admin may bypass via PR (own PRs are admin-merged after CI passes). Squash-merge only.
-- Coverage badge: secret gist holds `coverage-main.json`; repo variable `COVERAGE_GIST_ID`;
+- Badges: the secret gist holds `coverage-main.json` and `tests-main.json`; repo variable `COVERAGE_GIST_ID`;
   environment `coverage-badge` (deploy branch `main` only) holds the secret `GIST_TOKEN`
   (classic PAT, `gist` scope). Badge tracks `main` only.
 - Dependabot is configured (`.github/dependabot.yml`).

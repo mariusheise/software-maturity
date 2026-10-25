@@ -1,6 +1,6 @@
 # Software Maturity Demonstrator
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mariusheise/software-maturity/badge)](https://scorecard.dev/viewer/?uri=github.com/mariusheise/software-maturity) [![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mariusheise/9a670b7c3e531f53dabb7e1f6012e1a3/raw/coverage-main.json)](https://github.com/mariusheise/software-maturity/actions/workflows/coverage.yml?query=branch%3Amain)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/mariusheise/software-maturity/badge)](https://scorecard.dev/viewer/?uri=github.com/mariusheise/software-maturity) [![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mariusheise/9a670b7c3e531f53dabb7e1f6012e1a3/raw/coverage-main.json)](https://github.com/mariusheise/software-maturity/actions/workflows/coverage.yml?query=branch%3Amain) [![Tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/mariusheise/9a670b7c3e531f53dabb7e1f6012e1a3/raw/tests-main.json)](https://github.com/mariusheise/software-maturity/actions/workflows/tests.yml?query=branch%3Amain)
 
 ## Purpose
 
@@ -39,7 +39,7 @@ later, so the practices stay language-agnostic where possible.
 | `CMakeLists.txt`          | Build definition                                  |
 | `gcovr.cfg`               | Which files count for coverage                    |
 | `.pre-commit-config.yaml` | Hooks run by prek                                 |
-| `.github/workflows/`      | CI, coverage, clang-tidy, CodeQL, Scorecard, releases |
+| `.github/workflows/`      | CI, tests, coverage, clang-tidy, CodeQL, Scorecard, releases |
 | `.github/CODEOWNERS`      | Required reviewers per path                       |
 | `.devcontainer/`          | Reproducible dev environment (Docker)             |
 | `scripts/`                | Conan bootstrap                                   |
@@ -59,8 +59,9 @@ prek run --all-files
 ./build/Release/maturity_app
 ```
 
-The coverage run writes its reports, including a single-file HTML report, to
-`build/coverage-report/`, and clang-tidy writes its log and SARIF to `build/tidy-report/`; see
+`maturity:build` writes a sortable single-file test report (counts, status and time per test)
+to `build/test-report/<product>-<build type>.html`. The coverage run writes its reports,
+including a single-file HTML report, to `build/coverage-report/`, and clang-tidy writes its log and SARIF to `build/tidy-report/`; see
 [CONTRIBUTING.md](CONTRIBUTING.md#coverage).
 
 The git hook and the Conan configuration are installed automatically (`prek install`,

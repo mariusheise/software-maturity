@@ -34,6 +34,7 @@ def test_package_contains_only_profiles_and_commands():
         "extensions/commands/maturity/_coverage.py",
         "extensions/commands/maturity/_maturity.py",
         "extensions/commands/maturity/_sarif.py",
+        "extensions/commands/maturity/_tests.py",
         "extensions/commands/maturity/cmd_build.py",
         "extensions/commands/maturity/cmd_config_lock_update.py",
         "extensions/commands/maturity/cmd_coverage.py",

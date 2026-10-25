@@ -136,6 +136,52 @@ def test_build_passes_the_version_through(client):
     assert "version=None" in client.out
 
 
+# The fixture whose build() writes a JUnit file where maturity:build asks for it, like ctest.
+JUNIT_CONANFILE = FIXTURE_CONANFILE.replace(
+    "from conan import ConanFile\n", "from conan import ConanFile\nfrom conan.tools.files import save\n") + (
+    "\n    def build(self):\n"
+    "        junit = self.conf.get('user.maturity:junit')\n"
+    "        self.output.info(f'junit={junit}')\n"
+    "        status = 'fail' if self.options.product == 'productB' else 'run'\n"
+    "        if junit:\n"
+    "            save(self, junit, '<testsuite><testcase name=\"t1\" time=\"0.5\" '\n"
+    "                 f'status=\"{status}\"/></testsuite>')\n"
+    "        if status == 'fail':\n"
+    "            raise Exception('tests failed')\n")
+
+
+def test_build_writes_the_test_report(client):
+    client.save({"conanfile.py": JUNIT_CONANFILE})
+    client.run("maturity:lock-update --product productA")
+    client.run("maturity:build --product=productA --target=linux-x86_64")
+    stem = os.path.join(client.current_folder, "build", "test-report", "productA-release")
+    assert f"junit={stem}.xml" in client.out
+    for ext in (".html", ".md", ".json"):
+        assert os.path.isfile(stem + ext)
+    with open(stem + ".json", encoding="utf-8") as f:
+        assert json.load(f)["passed"] == 1
+    assert "### Tests: productA, release" in client.out
+    assert f"Test report: file://{stem}.html" in client.out
+
+
+def test_build_writes_the_report_even_when_tests_fail(client):
+    client.save({"conanfile.py": JUNIT_CONANFILE})
+    client.run("maturity:lock-update --product productB")
+    client.run("maturity:build --product=productB --target=linux-x86_64", assert_error=True)
+    assert "tests failed" in client.out
+    stem = os.path.join(client.current_folder, "build", "test-report", "productB-release")
+    with open(stem + ".json", encoding="utf-8") as f:
+        assert json.load(f)["failed"] == 1
+
+
+def test_build_skip_test_writes_no_report(client):
+    client.save({"conanfile.py": JUNIT_CONANFILE})
+    client.run("maturity:lock-update --product productA")
+    client.run("maturity:build --product=productA --target=linux-x86_64 --skip-test")
+    assert "junit=None" in client.out
+    assert not os.path.exists(os.path.join(client.current_folder, "build", "test-report"))
+
+
 def test_build_rejects_unknown_values_and_needs_the_lock(client):
     client.run("maturity:build --product=nope --target=linux-x86_64", assert_error=True)
     assert "Unknown product 'nope'" in client.out
