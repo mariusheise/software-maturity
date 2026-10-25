@@ -127,7 +127,9 @@ Two checks look for known vulnerabilities in dependencies:
 - `audit` (`audit.yml`) scans the locked Conan dependencies of every product with
   `conan audit scan`. It runs daily, and on pull requests and pushes that change
   `conanfile.py`, a lockfile or `products/`. It fails on a vulnerability with a CVSS score of
-  7.0 or higher (`audit.severity_level` in the product manifest). Run it locally:
+  7.0 or higher (`audit.severity_level` in the product manifest). If no fixed version exists
+  and the vulnerability doesn't affect the product, accept it in the manifest's `audit.ignore`
+  with a reason; the reviewer checks that reason. Run it locally:
 
 ```sh
 export CONAN_AUDIT_PROVIDER_TOKEN_CONANCENTER=<token>   # free token: https://conan.io/audit/register

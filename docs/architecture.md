@@ -42,7 +42,7 @@ How the repository is wired. Pair this with [status.md](status.md).
     - `conan maturity:audit [--product P] [--target T] [--severity-level S]` runs
       `conan audit scan` (audit.conan.io) on each product's locked graph, writes JSON, HTML and
       markdown to `build/audit-report/` and fails at the manifest's `audit.severity_level`
-      (CVSS 7.0 by default).
+      (CVSS 7.0 by default), except for ids accepted with a reason in `audit.ignore`.
     - `conan maturity:coverage --product P --target T [--diff-base REV]` runs `conan build`
       with the profile `maturity/coverage` (consumer-only `--coverage` flags, own build folder
       `build/coverage/Debug`), then gcovr with the project's `gcovr.cfg`, writes the reports to

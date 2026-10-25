@@ -236,6 +236,20 @@ It is the `audit` CI workflow, runnable locally with the same result:
 3. Fails if any vulnerability reaches the product's gate: `--severity-level` if given,
    otherwise the manifest's `audit.severity_level` (7.0, CVSS "High", from `defaults.yml`).
    Conan's own threshold is switched off so the gate can differ per product.
+4. Vulnerabilities listed in the manifest's `audit.ignore` (id: reason) are accepted: they stay
+   in the reports with their reason in an "Accepted" column but don't fail the gate. A new
+   vulnerability still fails. An accepted id the provider no longer reports for that product
+   gives a warning, so fixed entries get removed.
+
+```yaml
+# products/productB.yml
+audit:
+  ignore:
+    CVE-2026-76844: "zlib is required but never linked or called (placeholder dependency)"
+```
+
+Use it only with a reason someone can check (not reachable, not linked, mitigated elsewhere),
+and remove the entry when a fixed version is locked.
 
 The provider is audit.conan.io. It needs a free token (register at
 <https://conan.io/audit/register>). Conan reads it from the environment variable
@@ -261,6 +275,7 @@ coverage:
   fail_under: 90                      # coverage gate in percent
 audit:
   severity_level: 7.0                 # CVSS score that fails maturity:audit
+  ignore: {}                          # accepted vulnerabilities, id: reason
 release:
   latest: null                        # GitHub "Latest" marker: null = GitHub decides
 ```
@@ -278,6 +293,7 @@ shipped in the config package next to the commands, and a manifest overrides it 
 | `targets` | list of target profiles | all `maturity/target/*` | `lock-update` locks only these; `install`, `build`, `coverage` and `tidy` reject other `--target`s |
 | `coverage.fail_under` | number 0–100 | 90 | `maturity:coverage` default gate (`--fail-under` overrides) |
 | `audit.severity_level` | number 0–10 | 7.0 | `maturity:audit` gate: fails on a vulnerability with this CVSS score or higher (`--severity-level` overrides) |
+| `audit.ignore` | map of id to reason | `{}` | `maturity:audit`: accepted vulnerabilities, reported but not gated; stale ids give a warning |
 | `release.latest` | `true`, `false`, `null` | `null` | `release.yml`: `--latest` / `--latest=false` for `gh release create`; `null` lets GitHub decide |
 
 ### `conan maturity:list`

@@ -467,7 +467,7 @@ def test_audit_scans_every_product_and_writes_reports(client, monkeypatch):
     assert calls == ["conancenter", "conancenter"]
     assert "-o=&:product=productB" in client.out
     assert "-pr:h=maturity/build_type/release" in client.out
-    assert "1 known vulnerabilities** in 2 package(s), 0 at or above the gate of CVSS 7" in client.out
+    assert "1 known vulnerabilities** in 2 package(s), 0 failing the gate of CVSS 7" in client.out
     assert "Not scanned: private/1.0 (Not found.)" in client.out
     reports = os.path.join(client.current_folder, "build", "audit-report")
     for ext in ("json", "html", "md"):
@@ -481,10 +481,10 @@ def test_audit_fails_at_the_gate_from_the_manifest_or_the_flag(client, monkeypat
     client.save({"products/productA.yml": "options:\n  product: productA\naudit:\n  severity_level: 8\n"})
     client.run("maturity:lock-update")
     client.run("maturity:audit --product productA")
-    assert "No known vulnerabilities at or above the gate" in client.out
+    assert "No vulnerabilities fail the gate" in client.out
     client.run("maturity:audit", assert_error=True)
     assert "productB (linux-x86_64): zlib/1.3.1 CVE-2026-0001 CVSS 7.5 (gate 7)" in client.out
-    assert "productA (linux-x86_64)" not in client.out.split("at or above the gate:")[-1]
+    assert "productA (linux-x86_64)" not in client.out.split("product manifest):")[-1]
     client.run("maturity:audit --product productA --severity-level 7.5", assert_error=True)
 
 
@@ -504,3 +504,15 @@ def test_audit_rejects_unknown_values_and_needs_the_lock(client, monkeypatch):
     client.run("maturity:lock-update --product productA")
     client.run("maturity:audit --product productA --target win", assert_error=True)
     assert "Unknown target 'win'" in client.out
+
+
+def test_audit_ignore_accepts_a_vulnerability_and_warns_when_stale(client, monkeypatch):
+    fake_audit(monkeypatch, scan_result(score=7.5))
+    client.save({"products/productB.yml": "options:\n  product: productB\naudit:\n  ignore:\n"
+                                          "    CVE-2026-0001: zlib unused\n    CVE-2026-9999: fixed\n"})
+    client.run("maturity:lock-update --product productB")
+    client.run("maturity:audit --product productB")
+    assert "| zlib/1.3.1 | CVE-2026-0001 | High | 7.5 | zlib unused |" in client.out
+    assert "0 failing the gate of CVSS 7, 1 accepted." in client.out
+    assert "audit.ignore lists CVE-2026-9999, which no longer affects it" in client.out
+    assert "audit.ignore lists CVE-2026-0001" not in client.out

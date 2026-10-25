@@ -1,3 +1,9 @@
 description: Base product plus zlib (placeholder for a real product difference)
 options:
   product: productB
+audit:
+  ignore:
+    # zlib is only a placeholder requirement: CMakeLists.txt never links it and no code calls it.
+    # Drop these entries when zlib is removed or a fixed release (after 1.3.2) is locked.
+    CVE-2026-76844: "zlib is required but never linked or called (placeholder dependency)"
+    CVE-2026-85091: "zlib is required but never linked or called (placeholder dependency)"
