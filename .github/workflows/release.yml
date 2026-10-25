@@ -33,9 +33,9 @@ jobs:
             exit 1
           fi
       - name: Install tooling
-        run: |
-          pip install -r .devcontainer/requirements.txt
-          conan profile detect --force
+        run: pip install -r .devcontainer/requirements.txt
+      - name: Install Conan config
+        run: scripts/conan_config.sh
       - name: Build and test
         run: scripts/build.sh Release
       - name: Package

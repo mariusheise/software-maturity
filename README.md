@@ -31,6 +31,8 @@ later, so the practices stay language-agnostic where possible.
 | `tests/`                  | GoogleTest unit tests                             |
 | `conanfile.py`            | Dependencies and the `product` option (Conan 2)   |
 | `locks/<product>.lock`    | One Conan lockfile per product                    |
+| `conanconfig.yml`         | Conan configuration packages to install           |
+| `conan-recipes/`          | Local recipe index standing in for a Conan remote |
 | `CMakeLists.txt`          | Build definition                                  |
 | `.pre-commit-config.yaml` | Hooks run by prek                                 |
 | `.github/workflows/`      | CI, clang-tidy, CodeQL, Scorecard, releases       |
@@ -50,7 +52,8 @@ prek run --all-files
 ./build/Release/maturity_app
 ```
 
-The git hook is installed automatically (`prek install`).
+The git hook and the Conan configuration are installed automatically (`prek install`,
+`scripts/conan_config.sh`).
 
 ## Releases
 

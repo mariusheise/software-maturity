@@ -11,7 +11,16 @@ How the repository is wired. Pair this with [status.md](status.md).
 - Each product has its own lockfile `locks/<product>.lock`. Scripts read the `PRODUCT`
   environment variable (default `productA`). Regenerate all locks with
   `scripts/update_lock.sh`.
-- Scripts: `build.sh` (install, build, test), `coverage.sh` (Debug + gcovr, 90% line gate),
+- Conan configuration is a configuration package (`package_type = "configuration"`), not
+  files referenced by path. `conanconfig.yml` lists it by reference (`maturity-config/[>=0.1 <1]`)
+  and `conan config install-pkg .` installs it, which provides the `maturity` profile
+  (`compiler.cppstd=20`) that every script passes with `-pr maturity`.
+  `conan-recipes/` is a local-recipes-index registered as the remote `maturity-recipes`; it
+  simulates the Artifactory remote the recipe will move to. `install-pkg` only downloads
+  binaries, so `scripts/conan_config.sh` first builds each listed package from the index.
+  To split it out: publish the recipe from its own repo, add the remote (or `urls:` in
+  `conanconfig.yml`), and remove the index and the build loop. References stay unchanged.
+- Scripts: `conan_config.sh` (install the Conan configuration), `build.sh` (install, build, test), `coverage.sh` (Debug + gcovr, 90% line gate),
   `clang_tidy.sh` (clang-tidy, SARIF output), `coverage_annotate.py` (summary and PR
   comment markdown), `clang_tidy_to_sarif.py`.
 

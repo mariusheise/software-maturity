@@ -7,7 +7,7 @@ product="${PRODUCT:-productA}"
 build_dir="build/Debug"
 
 if [[ ! -f "${build_dir}/compile_commands.json" ]]; then
-  conan install . --lockfile="locks/${product}.lock" -o "&:product=${product}" --build=missing -s build_type=Debug -s compiler.cppstd=20
+  conan install . --lockfile="locks/${product}.lock" -o "&:product=${product}" --build=missing -s build_type=Debug -pr maturity
   cmake --preset conan-debug
 fi
 

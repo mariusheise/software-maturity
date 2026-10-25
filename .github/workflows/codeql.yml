@@ -25,9 +25,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install tooling
-        run: |
-          pip install -r .devcontainer/requirements.txt
-          conan profile detect --force
+        run: pip install -r .devcontainer/requirements.txt
+      - name: Install Conan config
+        run: scripts/conan_config.sh
       - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           languages: c-cpp

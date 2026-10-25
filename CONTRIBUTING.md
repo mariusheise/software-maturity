@@ -3,7 +3,7 @@
 ## Setup
 
 Open the repository in the devcontainer (`.devcontainer/`). It provides the
-toolchain, Conan and prek, and installs the git hooks on creation.
+toolchain, Conan and prek, installs the git hooks and the Conan configuration on creation.
 
 ## Workflow
 
@@ -28,6 +28,9 @@ toolchain, Conan and prek, and installs the git hooks on creation.
 - Dependencies are pinned per product in `locks/<product>.lock`; builds fail if `conanfile.py`
   and the lockfile disagree. After changing a requirement or upgrading, run
   `scripts/update_lock.sh` and commit the result.
+- Shared Conan configuration (the `maturity` profile) is a configuration package listed in
+  `conanconfig.yml`. Its recipe lives in `conan-recipes/`, a local-recipes-index that stands in
+  for a remote. After changing it, run `scripts/conan_config.sh` to rebuild and reinstall it.
 - Product variants are the Conan option `product`. Build one with `PRODUCT=productB scripts/build.sh`
   (default `productA`). Releases are cut by pushing a tag `<product>_v<version>`
   (for example `productA_v1.0.0`); a hyphen in the version makes it a pre-release. Each tag is handled

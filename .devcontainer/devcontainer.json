@@ -5,7 +5,7 @@
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "postCreateCommand": "prek install",
+  "postCreateCommand": "prek install && scripts/conan_config.sh",
   "customizations": {
     "vscode": {
       "extensions": [
