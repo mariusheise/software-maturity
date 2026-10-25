@@ -1,5 +1,8 @@
 # Defaults for every product manifest (products/<name>.yml); a manifest overrides them.
 coverage:
   fail_under: 90        # line coverage gate of maturity:coverage, in percent
+audit:
+  severity_level: 7.0   # maturity:audit fails on a vulnerability with this CVSS score or higher
+  ignore: {}            # accepted vulnerabilities, id: reason; reported but not gated
 release:
   latest: null          # GitHub "Latest" marker: null = GitHub decides, true or false = set it

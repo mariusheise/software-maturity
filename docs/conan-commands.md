@@ -171,7 +171,7 @@ It is the coverage gate of CI, runnable locally with the same result:
    `meets the gate of 90% (defaults.yml)`.
 
 On GitHub Actions it also writes the summary to the job summary and the step output
-`line-percent`, which the badge job reads. It needs `gcovr` on `PATH`, and a recipe with
+`line-percent`. It needs `gcovr` on `PATH`, and a recipe with
 `cmake_layout()` and a `build()` that runs the tests.
 
 ### `conan maturity:tidy`
@@ -209,6 +209,55 @@ It prints the clang-tidy version it found. The project pins `clang-tidy==23.1.3`
 in `.devcontainer/requirements.txt` for both the devcontainer and CI. It needs `clang-tidy` and
 `cmake` on `PATH`.
 
+### `conan maturity:audit`
+
+```sh
+export CONAN_AUDIT_PROVIDER_TOKEN_CONANCENTER=<token>   # or once: conan audit provider auth conancenter --token=<token>
+conan maturity:audit
+conan maturity:audit --product productB --severity-level 9
+```
+
+| Option             | Default       | Meaning                                                      |
+| ------------------ | ------------- | ------------------------------------------------------------ |
+| `--product`        | all           | A variant from `products/`                                   |
+| `--target`         | all of the product's | A profile under `maturity/target/`                    |
+| `--severity-level` | manifest      | Fail on a vulnerability with this CVSS score or higher (default: `audit.severity_level`, 7.0) |
+| `--provider`       | `conancenter` | Conan audit provider                                         |
+
+It is the `audit` CI workflow, runnable locally with the same result:
+
+1. For each product and each of its targets, runs `conan audit scan` with the arguments of
+   `maturity:install` for the release build type. That resolves the graph from the product's
+   lockfile, so it scans exactly the locked versions; nothing is built.
+2. Writes to `build/audit-report/`, per product and target: `<product>-<target>.json` (the raw
+   scan), `.html` (Conan's report) and `.md` (a table, worst first, also appended to the GitHub
+   job summary). Packages the provider doesn't know, such as private ones, are listed as "not
+   scanned".
+3. Fails if any vulnerability reaches the product's gate: `--severity-level` if given,
+   otherwise the manifest's `audit.severity_level` (7.0, CVSS "High", from `defaults.yml`).
+   Conan's own threshold is switched off so the gate can differ per product.
+4. Vulnerabilities listed in the manifest's `audit.ignore` (id: reason) are accepted: they stay
+   in the reports with their reason in an "Accepted" column but don't fail the gate. A new
+   vulnerability still fails. An accepted id the provider no longer reports for that product
+   gives a warning, so fixed entries get removed.
+
+```yaml
+# products/productB.yml
+audit:
+  ignore:
+    CVE-2026-76844: "zlib is required but never linked or called (placeholder dependency)"
+```
+
+Use it only with a reason someone can check (not reachable, not linked, mitigated elsewhere),
+and remove the entry when a fixed version is locked.
+
+The provider is audit.conan.io. It needs a free token (register at
+<https://conan.io/audit/register>). Conan reads it from the environment variable
+`CONAN_AUDIT_PROVIDER_TOKEN_CONANCENTER`, or from `conan audit provider auth conancenter
+--token=<token>`, which stores it in the Conan home (`.conan2/`, ignored by git). Never put it
+in a file in the repository. The free tier has a request limit; every scanned package is one
+request.
+
 ## Products and profiles
 
 A product variant is a pair of files with the same name in `products/`: a **manifest**
@@ -224,6 +273,9 @@ conf: {}                              # build settings that aren't options: -c u
 targets: [linux-x86_64]               # target profiles this product supports (default: all)
 coverage:
   fail_under: 90                      # coverage gate in percent
+audit:
+  severity_level: 7.0                 # CVSS score that fails maturity:audit
+  ignore: {}                          # accepted vulnerabilities, id: reason
 release:
   latest: null                        # GitHub "Latest" marker: null = GitHub decides
 ```
@@ -240,6 +292,8 @@ shipped in the config package next to the commands, and a manifest overrides it 
 | `conf` | map of scalars | `{}` | every command: `-c user.maturity.product:<key>=<value>` |
 | `targets` | list of target profiles | all `maturity/target/*` | `lock-update` locks only these; `install`, `build`, `coverage` and `tidy` reject other `--target`s |
 | `coverage.fail_under` | number 0–100 | 90 | `maturity:coverage` default gate (`--fail-under` overrides) |
+| `audit.severity_level` | number 0–10 | 7.0 | `maturity:audit` gate: fails on a vulnerability with this CVSS score or higher (`--severity-level` overrides) |
+| `audit.ignore` | map of id to reason | `{}` | `maturity:audit`: accepted vulnerabilities, reported but not gated; stale ids give a warning |
 | `release.latest` | `true`, `false`, `null` | `null` | `release.yml`: `--latest` / `--latest=false` for `gh release create`; `null` lets GitHub decide |
 
 ### `conan maturity:list`
@@ -308,6 +362,7 @@ exported files, so the same content gives the same revision on every machine.
 | See the products and their settings | `conan maturity:list` (`--format=json` for scripts) |
 | Build and test                | `conan maturity:build --product <name> --target <target> [--build-type debug]` |
 | Run clang-tidy before a PR    | `conan maturity:tidy --product productA --target linux-x86_64 [--diff-base origin/main]` |
+| Check dependencies for known vulnerabilities | `conan maturity:audit` (token in `CONAN_AUDIT_PROVIDER_TOKEN_CONANCENTER`); open `build/audit-report/*.html` |
 | Upgrade dependencies          | `conan maturity:lock-update`; commit `products/*.lock`                   |
 | Check coverage before a PR    | `conan maturity:coverage --product productA --target linux-x86_64 --diff-base origin/main`; open `build/coverage-report/coverage-report.html` |
 | Add a product variant         | Add `products/<name>.yml`, run `conan maturity:lock-update --product <name>`, add a `release-<name>.yml` caller workflow (tag triggers cannot be discovered) |
@@ -330,8 +385,9 @@ python -m pytest conan-recipes/recipes/maturity-config/all/test
 | Layer | File                       | What it covers                                                     |
 | ----- | -------------------------- | ------------------------------------------------------------------ |
 | 1     | `test_maturity_helpers.py` | `_maturity.py` functions on their own: product discovery, choice checks, argument building, reading `conanconfig.yml` and the installed config. No Conan home. |
+| 1     | `test_audit_helpers.py`    | `_audit.py`: findings from a scan result, the summary against the gate, the written reports. |
 | 1     | `test_coverage_helpers.py` | `_coverage.py`: the summary table, excluded lines, changed lines from a temporary git repository (including uncommitted edits), GitHub outputs. |
-| 2     | `test_commands.py`         | Each command through the real Conan CLI, loaded straight from the source folder into a throwaway Conan home with the recipe's profiles. Checks the generated command lines, lockfile contents, error messages and the config pin check. |
+| 2     | `test_commands.py`         | Each command through the real Conan CLI, loaded straight from the source folder into a throwaway Conan home with the recipe's profiles. Checks the generated command lines, lockfile contents, error messages and the config pin check. `maturity:audit` runs against a faked provider, so no token or network is needed. |
 | 3     | `test_packaging.py`        | Builds the real package, checks it contains only profiles and commands, uploads it to an in-memory Conan server, installs it with `config install-pkg` as a consumer would, and runs the commands from the installed package. |
 
 All layers take about two seconds. Notes:

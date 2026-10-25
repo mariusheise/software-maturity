@@ -11,7 +11,7 @@ first, then 3 and 4, then 6.
 | 4     | Required tests                            | In place (GoogleTest for both products; sortable test report; 90% line-coverage gate, runnable locally with `conan maturity:coverage`) |
 | 5     | Static analysis and linting               | In place (clang-format, CodeQL, -Werror, clang-tidy gate with a pinned version, runnable locally with `conan maturity:tidy`) |
 | 6     | prek hooks                                | In place (local and required CI check)           |
-| 11    | Dependency scanning                       | Partial (Dependabot; dependency review open)  |
+| 11    | Dependency scanning                       | In place (Dependabot, dependency review on PRs, daily `conan maturity:audit` of the Conan locks) |
 | 12    | Secrets scanning                          | In place (gitleaks, betterleaks, history scan)   |
 | 13    | Workflow hardening                        | In place (zizmor, actionlint, SHA pins, read-only token) |
 | 17    | Reproducible environment                  | In place (devcontainer, Conan lockfile)          |

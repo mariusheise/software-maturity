@@ -79,13 +79,25 @@ cooldown for new releases.
 | Package | Pinned in | Updated by | Used for |
 | --- | --- | --- | --- |
 | `gtest/1.14.0` (test requirement) | `products/<name>.lock` | `conan maturity:lock-update` | Unit tests |
-| `zlib/1.3.1` (productB only) | `products/productB.lock` | `conan maturity:lock-update` | Placeholder product difference |
+| `zlib/1.3.2` (productB only) | `products/productB.lock` | `conan maturity:lock-update` | Placeholder product difference; never linked. Two High CVEs without a fixed release are accepted in `products/productB.yml` (`audit.ignore`) |
 | `maturity-config` (configuration package) | `conan.lock` and every product lock | `conan maturity:config-lock-update` | Profiles and the `maturity:*` commands |
 
 Dependencies come from conancenter; `maturity-config` from the in-repo recipe index
 `conan-recipes/` (see [conan-commands.md](conan-commands.md)). Locks store exact versions and
 recipe revisions, so a build is reproducible until someone runs `lock-update` and commits the
 result. Dependabot does not cover Conan.
+
+## Vulnerability scanning
+
+| Scope | Check | When |
+| --- | --- | --- |
+| GitHub Actions, Python packages | `dependency-review` in `ci.yml` (`actions/dependency-review-action`) | Every PR; fails on a new dependency with a "high" or worse advisory |
+| GitHub Actions, Python packages, Docker base image | Dependabot security updates and alerts | Continuously |
+| Conan packages (`products/*.lock`) | `conan maturity:audit` in `audit.yml` (audit.conan.io) | Daily, and on PRs and pushes changing the Conan inputs; fails at CVSS 7.0 |
+
+`maturity:audit` needs a free audit.conan.io token: locally in
+`CONAN_AUDIT_PROVIDER_TOKEN_CONANCENTER`, in CI the repository secret `CONAN_AUDIT_TOKEN`.
+`maturity-config` itself is not scanned; it comes from this repository.
 
 ## Gaps
 
@@ -94,5 +106,6 @@ result. Dependabot does not cover Conan.
 - **`prek`**: only a lower bound (`>=0.5.5`), so a new prek release reaches CI without a PR. Pin it
   exactly if that ever causes trouble.
 - **Conan dependencies**: no automatic update PRs; run `conan maturity:lock-update` periodically.
+  `audit.yml` reports known vulnerabilities daily, but doesn't propose fixes.
 - **Two clang versions**: clang-format comes from the `v18.1.8` hook, clang-tidy from the
   `23.1.3` wheel. They don't interact, but bumping one doesn't bump the other.

@@ -28,6 +28,15 @@ def _scalar_map(value):
     return None
 
 
+def _reason_map(value):
+    if not isinstance(value, dict):
+        return "must be a mapping of vulnerability id to reason"
+    for key, item in value.items():
+        if not isinstance(item, str) or not item.strip():
+            return {key: "needs a reason (a non-empty string)"}
+    return None
+
+
 MANIFEST_SCHEMA = {
     "description": lambda v: None if isinstance(v, str) else "must be a string",
     "options": _scalar_map,
@@ -38,6 +47,11 @@ MANIFEST_SCHEMA = {
     "coverage": {
         "fail_under": lambda v: (None if isinstance(v, (int, float)) and not isinstance(v, bool)
                                  and 0 <= v <= 100 else "must be a number from 0 to 100"),
+    },
+    "audit": {
+        "severity_level": lambda v: (None if isinstance(v, (int, float)) and not isinstance(v, bool)
+                                     and 0 <= v <= 10 else "must be a CVSS score from 0 to 10"),
+        "ignore": _reason_map,
     },
     "release": {
         "latest": lambda v: None if v is None or isinstance(v, bool)
@@ -183,6 +197,6 @@ def config_packages(root):
         return (yaml.safe_load(f) or {}).get("packages") or []
 
 
-def run(conan_api, cmd):
+def run(conan_api, cmd, raise_on_errors=True):
     ConanOutput().info("Running: conan " + " ".join(cmd))
-    conan_api.command.run(cmd)
+    return conan_api.command.run(cmd, raise_on_errors=raise_on_errors)

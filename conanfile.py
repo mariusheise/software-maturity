@@ -13,7 +13,7 @@ class MaturityConan(ConanFile):
     def requirements(self):
         self.test_requires("gtest/1.14.0")
         if self.options.product == "productB":
-            self.requires("zlib/1.3.1")
+            self.requires("zlib/1.3.2")
 
     def layout(self):
         cmake_layout(self)

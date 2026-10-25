@@ -1,0 +1,59 @@
+name: audit
+
+# Known vulnerabilities in the locked Conan dependencies (conan audit scan, audit.conan.io).
+# Daily, because new advisories appear without any change here; on pushes and PRs only when the
+# dependencies can have changed, to stay within the provider's request limit. Not a required
+# check: PRs from forks and Dependabot get no secrets, so the scan is skipped there.
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: &dependency-paths
+      - conanfile.py
+      - conan.lock
+      - conanconfig.yml
+      - products/**
+      - conan-recipes/**
+      - .github/workflows/audit.yml
+  pull_request:
+    paths: *dependency-paths
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: audit
+    runs-on: ubuntu-24.04
+    env:
+      CONAN_AUDIT_PROVIDER_TOKEN_CONANCENTER: ${{ secrets.CONAN_AUDIT_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install tooling
+        run: pip install -r .devcontainer/requirements.txt
+      - name: Install Conan config
+        run: scripts/conan_bootstrap.sh && conan config install-pkg .
+      - name: Scan every product for known vulnerabilities
+        run: |
+          if [[ -z "${CONAN_AUDIT_PROVIDER_TOKEN_CONANCENTER}" ]]; then
+            echo "::notice::No CONAN_AUDIT_TOKEN secret (fork or Dependabot PR), audit skipped"
+            exit 0
+          fi
+          conan maturity:audit
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() && hashFiles('build/audit-report/*.html') != '' }}
+        with:
+          name: audit-report
+          path: build/audit-report/
+          retention-days: 14

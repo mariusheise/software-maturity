@@ -73,10 +73,10 @@ around it. C, Python and Rust variants are planned.
 
 Ordered by value. Update `status.md` and `maturity-checklist.md` as items land.
 
-1. **Dependency review (checklist 11).** Add `actions/dependency-review-action` (SHA-pinned)
-   on pull requests with `pull-requests: read`. Free on public repos. Add it as a required
-   check in ruleset `protect-main` (id 25796571) only after it has run once, so the check
-   name exists.
+1. **Dependency review (checklist 11).** Done in #46: `dependency-review` on PRs and
+   `conan maturity:audit` (`audit.yml`, daily). Left: add `dependency-review` as a required
+   check in ruleset `protect-main` (id 25796571); the check name exists after its first run.
+   `audit` must stay optional: a path-filtered check that doesn't run would block PRs.
 2. **Build both products in CI.** Done for `build-test` (`tests.yml`) and `coverage` (#41).
    The matrices come from `conan maturity:list` and the gate jobs cover them (#45), so a new
    `products/<name>.yml` needs only a lock and a `release-<name>.yml` caller. `clang-tidy` and

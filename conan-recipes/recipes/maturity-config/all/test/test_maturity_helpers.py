@@ -113,14 +113,15 @@ def test_discover_products_merges_the_shipped_defaults(tmp_path):
     a, b = products["a"], products["b"]
     assert a["name"] == "a"
     assert a["coverage"] == {"fail_under": 90} and a["release"] == {"latest": None}
+    assert a["audit"] == {"severity_level": 7.0, "ignore": {}}
     assert a["targets"] is None and a["conf"] == {} and a["description"] == ""
     assert b["coverage"] == {"fail_under": 85} and b["release"] == {"latest": False}
     assert b["targets"] == ["linux-x86_64"] and b["conf"] == {"log_level": "debug"}
 
 
 @pytest.mark.parametrize("content, message", [
-    ("colour: red\n", "products/x.yml: unknown key 'colour'. Allowed: conf, coverage, description, "
-                      "options, release, targets"),
+    ("colour: red\n", "products/x.yml: unknown key 'colour'. Allowed: audit, conf, coverage, "
+                      "description, options, release, targets"),
     ("coverage:\n  fail_undre: 80\n", "products/x.yml: unknown key 'coverage.fail_undre'. "
                                       "Allowed: fail_under"),
     ("- a\n", "products/x.yml: must be a mapping"),
@@ -130,6 +131,9 @@ def test_discover_products_merges_the_shipped_defaults(tmp_path):
     ("targets: linux-x86_64\n", "'targets' must be a list of strings"),
     ("coverage:\n  fail_under: 101\n", "'coverage.fail_under' must be a number from 0 to 100"),
     ("coverage:\n  fail_under: true\n", "'coverage.fail_under' must be a number from 0 to 100"),
+    ("audit:\n  ignore:\n    CVE-1: ''\n", "'audit.ignore.CVE-1' needs a reason (a non-empty string)"),
+    ("audit:\n  ignore: [CVE-1]\n", "'audit.ignore' must be a mapping of vulnerability id to reason"),
+    ("audit:\n  severity_level: 11\n", "'audit.severity_level' must be a CVSS score from 0 to 10"),
     ("release:\n  latest: 'yes'\n", "'release.latest' must be true, false or null"),
 ])
 def test_discover_products_rejects_invalid_manifests(tmp_path, content, message):

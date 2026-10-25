@@ -39,6 +39,10 @@ How the repository is wired. Pair this with [status.md](status.md).
       `build/tidy/Debug` (profile `maturity/tidy`), runs clang-tidy with the project's
       `.clang-tidy` on all project sources (or the changed ones), writes log and SARIF to
       `build/tidy-report/` and fails on findings.
+    - `conan maturity:audit [--product P] [--target T] [--severity-level S]` runs
+      `conan audit scan` (audit.conan.io) on each product's locked graph, writes JSON, HTML and
+      markdown to `build/audit-report/` and fails at the manifest's `audit.severity_level`
+      (CVSS 7.0 by default), except for ids accepted with a reason in `audit.ignore`.
     - `conan maturity:coverage --product P --target T [--diff-base REV]` runs `conan build`
       with the profile `maturity/coverage` (consumer-only `--coverage` flags, own build folder
       `build/coverage/Debug`), then gcovr with the project's `gcovr.cfg`, writes the reports to
@@ -83,7 +87,14 @@ How the repository is wired. Pair this with [status.md](status.md).
 ## Workflows (`.github/workflows/`)
 
 - `ci.yml`: `prek`, `conan-commands` (pytest for the `maturity-config` package), `secrets`
-  (betterleaks).
+  (betterleaks), and on PRs `dependency-review` (`actions/dependency-review-action`, fails on
+  "high" for actions and pip packages; Conan isn't in GitHub's dependency graph).
+- `audit.yml`: `conan maturity:audit` for all products, daily (new advisories need no code
+  change) and on pushes and PRs that touch the Conan inputs (path filter, to stay within the
+  provider's request limit). Uploads `build/audit-report/` (14 days). The token comes from the
+  secret `CONAN_AUDIT_TOKEN` as `CONAN_AUDIT_PROVIDER_TOKEN_CONANCENTER`; without it (fork and
+  Dependabot PRs) the scan is skipped with a notice. Not a required check, because of the path
+  filter.
 - `tests.yml`:
   - `products` runs `conan maturity:list --format=json` and outputs the product names.
   - `build-test (<product>, <build type>)` runs for every product in Release and Debug
@@ -126,9 +137,9 @@ How the repository is wired. Pair this with [status.md](status.md).
   conan-commands, secrets (betterleaks), analyze (c-cpp), clang-tidy. `tests` and `coverage`
   are the gate jobs, so the list doesn't change when products are added.
   Repo admin may bypass via PR (own PRs are admin-merged after CI passes). Squash-merge only.
-- No environments, repository variables or secrets. The badge setup (gist, `COVERAGE_GIST_ID`,
-  environment `coverage-badge`, `GIST_TOKEN`) was deleted with the badges (see "Badges
-  (planned)").
+- One repository secret, `CONAN_AUDIT_TOKEN` (audit.conan.io token for `audit.yml`). No
+  environments or repository variables. The badge setup (gist, `COVERAGE_GIST_ID`, environment
+  `coverage-badge`, `GIST_TOKEN`) was deleted with the badges (see "Badges (planned)").
 - Dependabot is configured (`.github/dependabot.yml`).
 
 ## Badges (planned, not built)

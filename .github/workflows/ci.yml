@@ -37,6 +37,20 @@ jobs:
       - name: Test the maturity-config package and its custom commands
         run: python -m pytest conan-recipes/recipes/maturity-config/all/test
 
+  dependency-review:
+    # New dependencies with known vulnerabilities in a PR (GitHub's dependency graph: actions,
+    # pip). Conan packages are not in the graph; the audit workflow scans those.
+    name: dependency-review
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+
   secrets:
     name: secrets (betterleaks)
     runs-on: ubuntu-24.04

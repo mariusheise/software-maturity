@@ -17,6 +17,8 @@ def _text(data):
         if product["conf"]:
             cli_out_write("  conf:     " + ", ".join(f"{k}={v}" for k, v in product["conf"].items()))
         cli_out_write(f"  coverage: fail_under={product['coverage']['fail_under']}")
+        cli_out_write(f"  audit:    severity_level={product['audit']['severity_level']}, "
+                      f"ignore={', '.join(product['audit']['ignore']) or '-'}")
         cli_out_write(f"  release:  latest={product['release']['latest']}")
 
 

@@ -1,12 +1,12 @@
 {
     "version": "0.5",
     "requires": [
-        "zlib/1.3.1#cac0f6daea041b0ccf42934163defb20%1765284699.337",
+        "zlib/1.3.2#1cb806da49011867778ffb6ac7190fcb%1777558780.503",
         "gtest/1.14.0#f8f0757a574a8dd747d16af62d6eb1b7%1743410807.169"
     ],
     "build_requires": [],
     "python_requires": [],
     "config_requires": [
-        "maturity-config/0.1.0#2e71f0db320898027f9eafd8e22e560d"
+        "maturity-config/0.1.0#2425d1da6e7e9b8f55295aa4524c0007"
     ]
 }
