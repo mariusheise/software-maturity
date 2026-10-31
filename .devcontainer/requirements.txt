@@ -1,5 +1,5 @@
 conan==2.33.0
-prek>=0.5.5
+prek>=0.5.7
 gcovr==8.7
 # Same clang-tidy in the devcontainer and CI (conan maturity:tidy)
 clang-tidy==23.1.3
