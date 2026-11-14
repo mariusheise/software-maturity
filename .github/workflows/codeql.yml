@@ -31,12 +31,12 @@ jobs:
         run: echo "conan_home=${HOME}/.conan2" > .conanrc
       - name: Install Conan config
         run: scripts/conan_bootstrap.sh && conan config install-pkg .
-      - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           languages: c-cpp
           build-mode: manual
       - name: Build
         run: conan maturity:build --product productA --target linux-x86_64
-      - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           category: "/language:c-cpp"
